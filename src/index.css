@@ -1,13 +1,19 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+header {
+  text-shadow: .5px .5px .5px #000;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+input[type="text"]::placeholder,
+input[type="number"]::placeholder,
+input[type="date"]::placeholder {
+    transition: transform .200s ease-in-out;
+}
+
+input[type="text"]:focus::placeholder,
+input[type="number"]:focus::placeholder,
+input[type="date"]:focus::placeholder {
+    transform: translateX(-150%);
 }
