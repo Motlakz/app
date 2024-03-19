@@ -16,9 +16,10 @@ const Form = ({
 }) => {
   const loanTypes = [
     { value: 'Home Loan', label: 'Home Loan' },
-    { value: 'Phone', label: 'Phone Loan' },
-    { value: 'Car', label: 'Car Loan' },
-    { value: 'Business', label: 'Business Loan'}
+    { value: 'Phone Loan', label: 'Phone Loan' },
+    { value: 'Car Loan', label: 'Car Loan' },
+    { value: 'Business Loan', label: 'Business Loan'},
+    { value: 'Personal Loan', label: 'Personal Loan'}
   ];
 
   const customStyles = {

@@ -14,6 +14,10 @@ function Navbar() {
                 <Link to="/about" className="text-white hover:bg-indigo-200 hover:text-indigo-700 py-1 px-2">About</Link>
                 <a href="#Contact" className="text-white hover:bg-indigo-200 hover:text-indigo-700 py-1 px-2">Contact</a>
             </ul>
+            <div className="buttons flex items-center gap-4">
+                <button>Sign Up</button>
+                <button>Sign In</button>
+            </div>
         </nav>
     )
 }

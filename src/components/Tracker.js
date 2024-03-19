@@ -30,15 +30,19 @@ const RepaymentsTracker = () => {
     });
 
     const [showSignUpPrompt, setShowSignUpPrompt] = useState(false);
-    const [dataEntryCount, setDataEntryCount] = useState(0);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [dataEntryCount, setDataEntryCount] = useState(() => {
+        const storedExpenses = localStorage.getItem("expenses");
+        return storedExpenses ? JSON.parse(storedExpenses).length : 0;
+    });
 
     useEffect(() => {
-        // Check if the data entry count reaches 3
-        if (dataEntryCount >= 3) {
-            // Show the sign-up prompt
-            setShowSignUpPrompt(true);
+        // Check if the data entry count reaches 3 and the user is not logged in
+        if (dataEntryCount >= 3 && !isLoggedIn) {
+          // Show the sign-up prompt
+          setShowSignUpPrompt(true);
         }
-    }, [dataEntryCount]);
+    }, [dataEntryCount, isLoggedIn]);
 
     useEffect(() => {
         // Save expenses to localStorage whenever expenses state changes
@@ -98,6 +102,11 @@ const RepaymentsTracker = () => {
             }
         }
     };
+
+    const handleLogin = () => {
+        setShowSignUpPrompt(false);
+        setIsLoggedIn(true);
+    };      
 
     const addExpense = () => {
         const areInputsValid = validateInputs();
@@ -251,6 +260,7 @@ const RepaymentsTracker = () => {
     return (
         <main className="max-w-full overflow-x-hidden mt-24 m-4 bg-white text-[#181028] p-8 shadow-lg rounded-lg">
           <h2 className="text-xl font-semibold mb-4">Loan Repayments Tracker</h2>
+          <div className={`${isLoggedIn || dataEntryCount < 3 ? '' : 'blur'}`}>
             <Form
                 newExpense={newExpense}
                 newInitialAmount={newInitialAmount}
@@ -295,8 +305,8 @@ const RepaymentsTracker = () => {
                 confirmDelete={confirmDelete}
                 cancelDelete={cancelDelete}
             />
-            {/* Render SignUpPrompt if showSignUpPrompt is true */}
-            {showSignUpPrompt && <SignUpPrompt isOpen={true} onClose={() => setShowSignUpPrompt(false)} />}
+            </div>
+            {showSignUpPrompt && <SignUpPrompt isOpen={true} onClose={() => setShowSignUpPrompt(false)} onLogin={handleLogin} />}
         </main>
     );
 };

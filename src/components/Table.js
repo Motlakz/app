@@ -1,7 +1,25 @@
 import React, { useState } from "react";
 
 const Table = ({ expenses, calculateRemainingAmount, openEditModal, deleteExpense }) => {
+    const [selectedRows, setSelectedRows] = useState([]);
     const [files, setFiles] = useState(Array(expenses.length).fill(null));
+
+    const handleCheckboxChange = (index) => {
+        if (selectedRows.includes(index)) {
+            setSelectedRows(selectedRows.filter((rowIndex) => rowIndex !== index));
+        } else {
+            setSelectedRows([...selectedRows, index]);
+        }
+    };
+
+    const handleRemoveRow = (index) => {
+        deleteExpense(index);
+    };
+
+    const handleDeleteSelectedRows = () => {
+        deleteExpense(selectedRows);
+        setSelectedRows([]);
+    };
 
     const handleFileChange = (index, event) => {
         const fileInput = event.target;
@@ -36,6 +54,7 @@ const Table = ({ expenses, calculateRemainingAmount, openEditModal, deleteExpens
                 <caption className="font-semibold mb-2">Monthly Repayments Table</caption>
                 <thead>
                     <tr className="bg-purple-200">
+                        <th className="border border-purple-500 p-2">Select</th>
                         <th className="border border-purple-500 p-2">Title</th>
                         <th className="border border-purple-500 p-2">Current Amount</th>
                         <th className="border border-purple-500 p-2">Amount Deducted per Month</th>
@@ -48,6 +67,14 @@ const Table = ({ expenses, calculateRemainingAmount, openEditModal, deleteExpens
                 </thead>
                 <tbody>
                     <tr className="text-gray-400">
+                        <td className="border border-gray-500 p-2">
+                            <input
+                                type="checkbox"
+                                checked={selectedRows.includes(-1)}
+                                onChange={() => handleCheckboxChange(-1)}
+                                disabled
+                            />
+                        </td>
                         <td className="border border-gray-500 p-2">My Expense</td>
                         <td className="border border-gray-500 p-2">1700000</td>
                         <td className="border border-gray-500 p-2">14000</td>
@@ -57,10 +84,10 @@ const Table = ({ expenses, calculateRemainingAmount, openEditModal, deleteExpens
                             {calculateRemainingAmount(1700000, 14000, "2023-12-18", 5)}
                         </td>
                         <td className="border-r border-b border-gray-500 p-4">
-                            <button className="bg-opacity-50 cursor-not-allowed bg-blue-500 text-white px-2 py-1 mr-2 w-full">
+                            <button className="bg-opacity-50 cursor-not-allowed bg-blue-500 text-white px-2 py-1 mr-2 w-full" disabled>
                                 Edit
                             </button>
-                            <button className="bg-opacity-50 cursor-not-allowed bg-red-500 text-white px-2 py-1 w-full">Remove</button>
+                            <button className="bg-opacity-50 cursor-not-allowed bg-red-500 text-white px-2 py-1 w-full" disabled>Remove</button>
                         </td>
                         <td className="border-r border-b border-gray-500 p-4">
                             <div className="file-input-container">
@@ -70,12 +97,13 @@ const Table = ({ expenses, calculateRemainingAmount, openEditModal, deleteExpens
                                     id={`file-0`}
                                     className="custom-file-input border w-64"
                                     onChange={(event) => handleFileChange(0, event)}
+                                    disabled
                                 />
                             </div>
                             {files[0] && (
                                 <div className="flex gap-2 mt-4">
-                                    <button className="bg-purple-100 p-2 cursor-not-allowed" target="_blank" rel="noopener noreferrer">View</button>
-                                    <button className="bg-purple-100 p-2 cursor-not-allowed" target="_blank" rel="noopener noreferrer">Download</button>
+                                    <button className="bg-purple-100 p-2 cursor-not-allowed" target="_blank" rel="noopener noreferrer" disabled>View</button>
+                                    <button className="bg-purple-100 p-2 cursor-not-allowed" target="_blank" rel="noopener noreferrer" disabled>Download</button>
                                 </div>
                             )}
                         </td>
@@ -83,6 +111,13 @@ const Table = ({ expenses, calculateRemainingAmount, openEditModal, deleteExpens
 
                     {expenses.map((expense, index) => (
                         <tr key={index} className="animate__animated animate__fadeInDown">
+                            <td className="border border-purple-500 p-2">
+                                <input
+                                    type="checkbox"
+                                    checked={selectedRows.includes(index)}
+                                    onChange={() => handleCheckboxChange(index)}
+                                />
+                            </td>
                             <td className="border border-purple-500 p-2">{expense.title}</td>
                             <td className="border border-purple-500 p-2">{expense.initialAmount.toFixed(2)}</td>
                             <td className="border border-purple-500 p-2">{expense.amountReduced.toFixed(2)}</td>
@@ -104,21 +139,21 @@ const Table = ({ expenses, calculateRemainingAmount, openEditModal, deleteExpens
                                     Edit
                                 </button>
                                 <button
-                                    onClick={() => deleteExpense(index)}
-                                    className="bg-red-500 hover:bg-red-600 hover:text-purple-200 text-white px-2 py-1 w-full"
+                                    onClick={() => handleRemoveRow(index)}
+                                    className="bg-red-500 hover:bg-red-600 hover:text-purple-50 text-white px-2 py-1 w-full"
                                 >
                                     Remove
                                 </button>
                             </td>
                             <td className="border-r border-b border-purple-500 p-4">
                                 <div className="file-input-container">
-                                <input
-                                    type="file"
-                                    name={`file-${index + 1}`}
-                                    id={`file-${index + 1}`}
-                                    className="custom-file-input cursor-pointer border w-64"
-                                    onChange={(event) => handleFileChange(index + 1, event)}
-                                />
+                                    <input
+                                        type="file"
+                                        name={`file-${index + 1}`}
+                                        id={`file-${index + 1}`}
+                                        className="custom-file-input cursor-pointer border w-64"
+                                        onChange={(event) => handleFileChange(index + 1, event)}
+                                    />
                                 </div>
                                 {files[index + 1] && (
                                     <div className="flex gap-2 mt-4 animate__animated animate__zoomIn">
@@ -141,6 +176,11 @@ const Table = ({ expenses, calculateRemainingAmount, openEditModal, deleteExpens
                     ))}
                 </tbody>
             </table>
+            <div>
+                {selectedRows.length > 0 && (
+                    <button className="bg-red-500 hover:bg-red-600 text-white p-2 mt-4" onClick={handleDeleteSelectedRows}>Delete Selected Rows</button>
+                )}
+            </div>
         </section>
     );
 };
