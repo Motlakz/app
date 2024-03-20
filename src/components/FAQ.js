@@ -17,7 +17,7 @@ function FAQs() {
             answer: "Unlike most apps, Repay Smart offers a comprehensive view of your loan progression from the moment it's issued until it's fully paid off. We empower you with the tools to stay informed about your future repayments and take control of your financial journey."
         },
         {
-            question: 'I already have a credit score app that tracks my debts and loans. Why should I use Repay Smart?',
+            question: 'Why should I use Repay Smart when I have a Credit Score app?',
             answer: "While credit score apps provide a broad overview of your accounts, they often lack detailed information about your loans. They might show your loan balance, but not the specifics like monthly repayments, annual interest, or payment dates. Repay Smart fills this gap with a simple, focused solution - track your loan repayments with minimal effort. Gain a deeper understanding of your current financial status and confidently plan for a debt-free future."
         }        
     ];
@@ -28,8 +28,8 @@ function FAQs() {
                 <span className="icon text-2xl">❓</span>
                 <span className="icon text-2xl">❓</span>
             </div>
-            <article className="text-center mb-4 animate__animated animate__fadeIn">
-                <h2 className="font-bold text-2xl mb-4 text-purple-600">Frequently Asked Questions</h2>
+            <article className="text-center text-cyan-800 mb-4 animate__animated animate__fadeIn">
+                <h2 className="font-bold text-2xl mb-4">Frequently Asked Questions</h2>
                 <p>Have questions? Explore our Frequently Asked Questions section for quick answers to your immediate queries. If your question isn't answered, feel free to reach out via the contact form listed below or on our contact page and we'll respond as soon as we can.</p>
              </article>
             {questions.map((item, index) => (

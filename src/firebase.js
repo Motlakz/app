@@ -4,14 +4,14 @@ import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, s
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDdWcE_LbTlTx-hMCTLK3YTAXvZ29uZX3k",
-  authDomain: "repay-smart.firebaseapp.com",
-  databaseURL: "https://repay-smart-default-rtdb.firebaseio.com",
-  projectId: "repay-smart",
-  storageBucket: "repay-smart.appspot.com",
-  messagingSenderId: "783584558845",
-  appId: "1:783584558845:web:76559ad817b1261df0c894",
-  measurementId: "G-2GSJPTFP17"
+    apiKey: process.env.API_KEY,
+    authDomain: process.env.AUTH_DOMAIN,
+    databaseUrl: process.env.DATABASE_URL,
+    projectId: process.env.PROJECT_ID,
+    storageBucket: process.env.STORAGE_BUCKET,
+    messagingSenderId: process.env.MESSAGING_SENDER_ID,
+    appId: process.env.APP_ID,
+    measurementId: process.env.MEASUREMENT_ID
 };
 
 // Initialize Firebase
