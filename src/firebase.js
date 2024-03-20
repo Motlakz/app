@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, GithubAuthProvider, signInWithPopup } from "firebase/auth";
+import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, GithubAuthProvider, signInWithPopup } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -25,6 +25,15 @@ const firestore = getFirestore(app);
 // Initialize authentication providers
 const googleProvider = new GoogleAuthProvider();
 const githubProvider = new GithubAuthProvider();
+const authStateChanged = onAuthStateChanged(auth, (user) => {
+  if (user) {
+    // User is signed in
+    console.log('User is signed in');
+  } else {
+    // User is signed out
+    console.log('User is signed out');
+  }
+});
 
-// Export the services and providers
-export { app, analytics, auth, firestore, googleProvider, githubProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword };
+// Export the services, providers, and authStateChanged
+export { app, analytics, auth, firestore, googleProvider, githubProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, authStateChanged, signOut };

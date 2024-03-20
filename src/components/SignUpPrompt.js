@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, googleProvider, githubProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword } from '../firebase';
 import { FaGithub, FaGoogle } from 'react-icons/fa';
+import FlashMessage from './FlashMessage';
 
 function SignUpPrompt({ isOpen, onClose, onLogin }) {
   const [username, setUsername] = useState('');
@@ -9,47 +10,79 @@ function SignUpPrompt({ isOpen, onClose, onLogin }) {
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(true);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setErrorMessage('');
+
+    // Username validation
+    if (username.trim().length === 0) {
+      setErrorMessage('Please enter a username');
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setErrorMessage('Please enter a valid email address');
+      return;
+    }
+
+    // Password validation
+    if (password.length < 6) {
+      setErrorMessage('Password should be at least 6 characters long');
+      return;
+    }
     try {
       if (isSignUp) {
         await createUserWithEmailAndPassword(auth, email, password);
+        setSuccessMessage('Sign up successful!');
+        setErrorMessage('');
       } else {
         await signInWithEmailAndPassword(auth, email, password);
+        setSuccessMessage('Sign in successful!');
+        setErrorMessage('');
       }
       onClose(); // Close the prompt
       navigate('/tracker'); // Redirect to the tracker route
       onLogin(); // Call the onLogin function to update the login status
-      setError(''); // Clear any existing error
     } catch (error) {
       console.error('Error:', isSignUp ? 'signing up' : 'signing in', error);
-      setError(error.message); // Set the error message
+      setErrorMessage(error.message); // Set the error message
+      setSuccessMessage('');
     }
   };
 
   const handleGitHubSignIn = async () => {
     try {
       await signInWithPopup(auth, githubProvider);
+      setSuccessMessage('Sign in successful!');
+      setErrorMessage('');
       onClose(); // Close the prompt
       navigate('/tracker'); // Redirect to the tracker route
       onLogin(); // Call the onLogin function to update the login status
     } catch (error) {
       console.error('Error with GitHub sign-in:', error);
-      setError(error.message); // Set the error message
+      setErrorMessage(error.message); // Set the error message
+      setSuccessMessage('');
     }
   };
 
   const handleGoogleSignIn = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
+      setSuccessMessage('Sign in successful!');
+      setErrorMessage('');
       onClose(); // Close the prompt
       navigate('/tracker'); // Redirect to the tracker route
       onLogin(); // Call the onLogin function to update the login status
     } catch (error) {
       console.error('Error with Google sign-in:', error);
-      setError(error.message); // Set the error message
+      setErrorMessage(error.message); // Set the error message
+      setSuccessMessage('');
     }
   };
 
@@ -64,11 +97,18 @@ function SignUpPrompt({ isOpen, onClose, onLogin }) {
   return (
     <>
       {isOpen && (
-        <div className="fixed z-10 inset-0 overflow-y-auto">
+        <div className="form-modal square-in-center fixed z-10 inset-0 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen bg-black bg-opacity-50">
-            <div className="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all max-w-md w-full">
-              <div className="px-6 py-4">
-                <div className="text-xl font-semibold text-indigo-900 mb-4 flex items-center">
+            <div className="bg-white relative rounded-lg overflow-hidden shadow-xl transform transition-all max-w-md w-full">
+              <button
+                type="button"
+                onClick={onClose}
+                className="absolute right-0 border hover:border-indigo-500 hover:text-indigo-500 hover:bg-purple-200 bg-indigo-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              >
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+              <div className="form-body px-6 py-4">
+                <div className="text-xl font-semibold text-indigo-900 my-4 flex items-center">
                   {isSignUp ? 'Sign Up' : 'Sign In'}
                   <div className="ml-2 text-indigo-500">
                     {isSignUp ? (
@@ -82,6 +122,8 @@ function SignUpPrompt({ isOpen, onClose, onLogin }) {
                     )}
                   </div>
                 </div>
+                <FlashMessage message={successMessage} type="success" />
+                <FlashMessage message={errorMessage} type="error" />
                 <form onSubmit={handleSubmit}>
                   {isSignUp && (
                       <p className="my-4 text-gray-600">
@@ -132,22 +174,12 @@ function SignUpPrompt({ isOpen, onClose, onLogin }) {
                       required
                     />
                   </div>
-      
-                  <div className="flex justify-end">
-                    <button
-                      type="button"
-                      onClick={onClose}
-                      className="w-full border border-indigo-500 text-indigo-500 hover:bg-indigo-600 hover:text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                    >
-                      Close
-                    </button>
-                    <button
-                      type="submit"
-                      className="w-full bg-indigo-500 border border-transparent hover:bg-white hover:border-purple-600 hover:text-purple-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ml-4"
-                    >
-                      {isSignUp ? 'Sign Up' : 'Sign In'}
-                    </button>
-                  </div>
+                  <button
+                    type="submit"
+                    className="w-full bg-indigo-500 border border-transparent hover:bg-white hover:border-purple-600 hover:text-purple-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                  >
+                    {isSignUp ? 'Sign Up' : 'Sign In'}
+                  </button>
                 </form>
 
                 <div className="line-container flex items-center my-4">

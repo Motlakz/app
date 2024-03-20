@@ -1,12 +1,14 @@
 import React from 'react' 
-import RepaymentsTracker from './Tracker'
 import Header from './Header'
+import AppDemo from './AppDemo';
+import FAQs from './FAQ';
 
 function Home() {
     return(
         <>
             <Header />
-            <RepaymentsTracker/>
+            <AppDemo />
+            <FAQs />
         </>
     )
 }

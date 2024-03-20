@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400&family=Quicksand&display=swap');
+
+body {
+    font-family: 'Quicksand', 'Outfit', sans-serif;
+}
+
 header {
   text-shadow: .5px .5px .5px #000;
 }
@@ -40,4 +46,133 @@ input[type="checkbox"] {
   flex-grow: 1;
   height: 1px;
   background-color: lightgray;
+}
+
+.alert-msg {
+  text-shadow: 1px 1px 1px #000;
+}
+
+.form-modal .form-body {
+  overflow-y: auto;
+  max-height: 90vh;
+}
+
+.form-modal .form-body::-webkit-scrollbar {
+  background-color: rgb(194, 156, 230);
+  width: 6px;
+}
+
+.form-modal .form-body::-webkit-scrollbar-thumb {
+  background-color: indigo;
+}
+
+.square-in-center {
+  animation: .8s square-in-center ease forwards;
+}
+
+.container {
+  animation: .8s circle-in-center ease;
+}
+
+.dropdown {
+  background-color: rgb(133, 39, 221);
+  margin: 10px;
+  text-align: left;
+  position: relative;
+}
+
+.toggle-btn {
+  color: #fff;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.content {
+  color: #fff;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s ease-in-out;
+}
+
+.toggle-btn::before {
+  animation: spin-rotate 2s ease, spin-padding 2s ease;
+  content: "+";
+  color: indigo;
+  background-color: rgb(194, 156, 230);
+  font-weight: 800;
+  padding: 10px;
+  display: inline-block;
+  margin-right: 8px;
+  transition: transform 0.3s ease-in-out;
+}
+
+.toggle-btn.open::before {
+  transform: rotate(45deg);
+  background: none;
+}
+
+.toggle-btn.open {
+  background-color:rgb(194, 156, 230);
+  transition: background-color .5s ease;
+  color: indigo;
+  padding-right: 15px;
+}
+
+.content.open {
+  color: #fff;
+  padding: 20px;
+  max-height: 800px;
+}
+
+@media (width <= 475px) {
+  .container {
+      padding: 10px;
+  }
+
+  .container,
+  .toggle-btn {
+      font-size: small;
+  }
+}
+
+@keyframes spin-rotate {
+  0% {
+      transform: rotate(0deg);
+  }
+
+  100% {
+      transform: rotate(360deg);
+  }
+}
+
+@keyframes spin-padding {
+  0% {
+      padding: 0;
+  }
+
+  100% {
+      padding: 10px;
+  }
+}
+
+@keyframes circle-in-center {
+  from {
+      clip-path: circle(0%);
+  }
+
+  to {
+      clip-path: circle(125%);
+  }
+}
+
+@keyframes square-in-center {
+  from {
+    clip-path: inset(100% 100% 100% 100%);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
 }

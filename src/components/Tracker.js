@@ -4,9 +4,8 @@ import Table from "./Table";
 import FlashMessage from "./FlashMessage";
 import DeleteModal from "./DeleteModal";
 import EditModal from "./EditModal";
-import SignUpPrompt from "./SignUpPrompt";
 
-const RepaymentsTracker = () => {
+function RepaymentsTracker({ isLoggedIn, dataEntryCount, setDataEntryCount, setShowSignUpPrompt }) {
     const [showEditModal, setShowEditModal] = useState(false);
     const [expenses, setExpenses] = useState(() => {
         // Retrieve expenses from localStorage on component mount
@@ -29,25 +28,20 @@ const RepaymentsTracker = () => {
         annualInterestRate: true,
     });
 
-    const [showSignUpPrompt, setShowSignUpPrompt] = useState(false);
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [dataEntryCount, setDataEntryCount] = useState(() => {
-        const storedExpenses = localStorage.getItem("expenses");
-        return storedExpenses ? JSON.parse(storedExpenses).length : 0;
-    });
-
     useEffect(() => {
-        // Check if the data entry count reaches 3 and the user is not logged in
         if (dataEntryCount >= 3 && !isLoggedIn) {
-          // Show the sign-up prompt
           setShowSignUpPrompt(true);
         }
-    }, [dataEntryCount, isLoggedIn]);
+      }, [dataEntryCount, isLoggedIn, setShowSignUpPrompt]);
 
     useEffect(() => {
-        // Save expenses to localStorage whenever expenses state changes
         localStorage.setItem("expenses", JSON.stringify(expenses));
     }, [expenses]);
+
+    useEffect(() => {
+        // Save login state to localStorage
+        localStorage.setItem("isLoggedIn", JSON.stringify(isLoggedIn));
+    }, [isLoggedIn]);
 
     const handleInputChange = (field, value) => {
         setValidation((prevValidation) => ({
@@ -101,12 +95,7 @@ const RepaymentsTracker = () => {
                 saveExpense();
             }
         }
-    };
-
-    const handleLogin = () => {
-        setShowSignUpPrompt(false);
-        setIsLoggedIn(true);
-    };      
+    };     
 
     const addExpense = () => {
         const areInputsValid = validateInputs();
@@ -258,7 +247,7 @@ const RepaymentsTracker = () => {
     const isAddExpenseDisabled = editIndex !== null;
 
     return (
-        <main className="max-w-full overflow-x-hidden mt-24 m-4 bg-white text-[#181028] p-8 shadow-lg rounded-lg">
+        <main className="max-w-full relative overflow-x-hidden mt-24 m-4 bg-white text-[#181028] p-8 shadow-lg rounded-lg">
           <h2 className="text-xl font-semibold mb-4">Loan Repayments Tracker</h2>
           <div className={`${isLoggedIn || dataEntryCount < 3 ? '' : 'blur'}`}>
             <Form
@@ -305,8 +294,14 @@ const RepaymentsTracker = () => {
                 confirmDelete={confirmDelete}
                 cancelDelete={cancelDelete}
             />
+
+    
             </div>
-            {showSignUpPrompt && <SignUpPrompt isOpen={true} onClose={() => setShowSignUpPrompt(false)} onLogin={handleLogin} />}
+            {!isLoggedIn && dataEntryCount >= 3 && (
+                <div className="alert-msg absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                    <p className="text-indigo-300 text-2xl font-bold">Please log in to view or manage your data.</p>
+                </div>
+            )}
         </main>
     );
 };
