@@ -267,6 +267,7 @@ function RepaymentsTracker({ isLoggedIn, dataEntryCount, setDataEntryCount, setS
                 handleSubmit={handleSubmit}
             />
             <Table
+                setFlashMessage={setFlashMessage}
                 expenses={expenses}
                 calculateRemainingAmount={calculateRemainingAmount}
                 openEditModal={openEditModal}

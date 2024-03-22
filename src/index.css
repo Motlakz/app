@@ -52,6 +52,15 @@ input[type="checkbox"] {
   text-shadow: 1px 1px 1px #000;
 }
 
+ul li a,
+button {
+  transition: all .4s ease-in-out;
+}
+
+ul li a:hover{
+  box-shadow: rgba(166, 46, 240, 0.4) 5px 5px;
+}
+
 .form-modal .form-body {
   overflow-y: auto;
   max-height: 90vh;
@@ -70,30 +79,7 @@ input[type="checkbox"] {
   animation: .8s square-in-center ease forwards;
 }
 
-.container {
-  animation: .8s circle-in-center ease;
-}
-
-.dropdown {
-  background-color: rgb(133, 39, 221);
-  margin: 10px;
-  text-align: left;
-  position: relative;
-}
-
-.toggle-btn {
-  color: #fff;
-  cursor: pointer;
-  background: none;
-  border: none;
-  font-size: 18px;
-  font-weight: bold;
-}
-
 .content {
-  color: #fff;
-  max-height: 0;
-  overflow: hidden;
   transition: max-height 0.5s ease-in-out;
 }
 
@@ -103,7 +89,7 @@ input[type="checkbox"] {
   color: indigo;
   background-color: rgb(194, 156, 230);
   font-weight: 800;
-  padding: 10px;
+  padding: 5px;
   display: inline-block;
   margin-right: 8px;
   transition: transform 0.3s ease-in-out;
@@ -128,13 +114,27 @@ input[type="checkbox"] {
 }
 
 @media (width <= 475px) {
-  .container {
-      padding: 10px;
-  }
 
   .container,
   .toggle-btn {
       font-size: small;
+  }
+}
+
+@media (width <= 650px) {
+  .container {
+    padding: 0 10px;
+  }
+}
+
+@media (width <= 768px) {
+  header article h1 {
+    font-size: xx-large !important;
+  }
+
+  header article p,
+  .about-page section article p {
+    font-size: large !important;
   }
 }
 
@@ -155,16 +155,6 @@ input[type="checkbox"] {
 
   100% {
       padding: 10px;
-  }
-}
-
-@keyframes circle-in-center {
-  from {
-      clip-path: circle(0%);
-  }
-
-  to {
-      clip-path: circle(125%);
   }
 }
 

@@ -1,97 +1,167 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { auth, googleProvider, githubProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword } from '../firebase';
+import { useForm } from 'react-hook-form';
+import { auth, googleProvider, githubProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword } from '../firebase-config';
 import { FaGithub, FaGoogle } from 'react-icons/fa';
-import FlashMessage from './FlashMessage';
 
-function SignUpPrompt({ isOpen, onClose, onLogin }) {
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+export const SignUpForm = ({ onSubmit, errors, register }) => (
+  <form onSubmit={onSubmit}>
+    <p className="my-4 text-gray-600">
+      By signing up, you'll get access to the full user experience and all the features our app has to offer.
+    </p>
+    <div className="mb-4">
+      <label htmlFor="username" className="block text-gray-700 text-sm font-bold mb-2">
+        Username
+      </label>
+      <input
+        type="text"
+        id="username"
+        {...register('username', { required: true })}
+        className="w-full border border-gray-300 rounded py-2 px-3 text-gray-700 focus:outline-none focus:border-indigo-500"
+        placeholder="Choose a username"
+      />
+      {errors.username && <span className="text-red-500">Username is required</span>}
+    </div>
+    <div className="mb-4">
+      <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">
+        Email
+      </label>
+      <input
+        type="email"
+        id="email"
+        {...register('email', {
+          required: true,
+          pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+        })}
+        className="w-full border border-gray-300 rounded py-2 px-3 text-gray-700 focus:outline-none focus:border-indigo-500"
+        placeholder="Your email"
+      />
+      {errors.email?.type === 'required' && <span className="text-red-500">Email is required</span>}
+      {errors.email?.type === 'pattern' && <span className="text-red-500">Invalid email format</span>}
+    </div>
+    <div className="mb-4">
+      <label htmlFor="password" className="block text-gray-700 text-sm font-bold mb-2">
+        Password
+      </label>
+      <input
+        type="password"
+        id="password"
+        {...register('password', { required: true, minLength: 6 })}
+        className="w-full border border-gray-300 rounded py-2 px-3 text-gray-700 focus:outline-none focus:border-indigo-500"
+        placeholder="Your password"
+      />
+      {errors.password?.type === 'required' && <span className="text-red-500">Password is required</span>}
+      {errors.password?.type === 'minLength' && <span className="text-red-500">Password should be at least 6 characters long</span>}
+    </div>
+    <button
+      type="submit"
+      className="w-full bg-indigo-500 border border-transparent hover:bg-white hover:border-purple-600 hover:text-purple-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+    >
+      Sign Up
+    </button>
+  </form>
+);
+
+export const SignInForm = ({ onSubmit, errors, register }) => (
+  <form onSubmit={onSubmit}>
+    <div className="mb-4">
+      <label htmlFor="username" className="block text-gray-700 text-sm font-bold mb-2">
+        Username
+      </label>
+      <input
+        type="text"
+        id="username"
+        {...register('username', { required: true })}
+        className="w-full border border-gray-300 rounded py-2 px-3 text-gray-700 focus:outline-none focus:border-indigo-500"
+        placeholder="Enter your username"
+      />
+      {errors.username && <span className="text-red-500">Username is required</span>}
+    </div>
+    <div className="mb-4">
+      <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">
+        Email
+      </label>
+      <input
+        type="email"
+        id="email"
+        {...register('email', {
+          required: true,
+          pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+        })}
+        className="w-full border border-gray-300 rounded py-2 px-3 text-gray-700 focus:outline-none focus:border-indigo-500"
+        placeholder="Your email"
+      />
+      {errors.email?.type === 'required' && <span className="text-red-500">Email is required</span>}
+      {errors.email?.type === 'pattern' && <span className="text-red-500">Invalid email format</span>}
+    </div>
+    <div className="mb-4">
+      <label htmlFor="password" className="block text-gray-700 text-sm font-bold mb-2">
+        Password
+      </label>
+      <input
+        type="password"
+        id="password"
+        {...register('password', { required: true, minLength: 6 })}
+        className="w-full border border-gray-300 rounded py-2 px-3 text-gray-700 focus:outline-none focus:border-indigo-500"
+        placeholder="Your password"
+      />
+      {errors.password?.type === 'required' && <span className="text-red-500">Password is required</span>}
+      {errors.password?.type === 'minLength' && <span className="text-red-500">Password should be at least 6 characters long</span>}
+    </div>
+    <button
+      type="submit"
+      className="w-full bg-indigo-500 border border-transparent hover:bg-white hover:border-purple-600 hover:text-purple-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+    >
+      Sign In
+    </button>
+  </form>
+);
+
+function SignUpPrompt({ isOpen, onClose }) {
   const [isSignUp, setIsSignUp] = useState(true);
-  const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
+  const { register, handleSubmit, formState: { errors } } = useForm();
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setErrorMessage('');
-
-    // Username validation
-    if (username.trim().length === 0) {
-      setErrorMessage('Please enter a username');
-      return;
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setErrorMessage('Please enter a valid email address');
-      return;
-    }
-
-    // Password validation
-    if (password.length < 6) {
-      setErrorMessage('Password should be at least 6 characters long');
-      return;
-    }
+  const onSubmit = async (data) => {
     try {
       if (isSignUp) {
-        await createUserWithEmailAndPassword(auth, email, password);
-        setSuccessMessage('Sign up successful!');
-        setErrorMessage('');
+        await createUserWithEmailAndPassword(auth, data.email, data.password);
+        console.log('Sign up successful!');
       } else {
-        await signInWithEmailAndPassword(auth, email, password);
-        setSuccessMessage('Sign in successful!');
-        setErrorMessage('');
+        await signInWithEmailAndPassword(auth, data.email, data.password);
+        console.log('Sign in successful!');
       }
-      onClose(); // Close the prompt
-      navigate('/tracker'); // Redirect to the tracker route
-      onLogin(); // Call the onLogin function to update the login status
+      onClose();
+      navigate('/tracker');
     } catch (error) {
       console.error('Error:', isSignUp ? 'signing up' : 'signing in', error);
-      setErrorMessage(error.message); // Set the error message
-      setSuccessMessage('');
     }
   };
 
   const handleGitHubSignIn = async () => {
     try {
       await signInWithPopup(auth, githubProvider);
-      setSuccessMessage('Sign in successful!');
-      setErrorMessage('');
-      onClose(); // Close the prompt
-      navigate('/tracker'); // Redirect to the tracker route
-      onLogin(); // Call the onLogin function to update the login status
+      console.log('Sign in successful!');
+      onClose();
+      navigate('/tracker');
     } catch (error) {
       console.error('Error with GitHub sign-in:', error);
-      setErrorMessage(error.message); // Set the error message
-      setSuccessMessage('');
     }
   };
 
   const handleGoogleSignIn = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
-      setSuccessMessage('Sign in successful!');
-      setErrorMessage('');
-      onClose(); // Close the prompt
-      navigate('/tracker'); // Redirect to the tracker route
-      onLogin(); // Call the onLogin function to update the login status
+      console.log('Sign in successful!');
+      onClose();
+      navigate('/tracker');
     } catch (error) {
       console.error('Error with Google sign-in:', error);
-      setErrorMessage(error.message); // Set the error message
-      setSuccessMessage('');
     }
   };
 
   const toggleForm = () => {
     setIsSignUp(!isSignUp);
-    setEmail('');
-    setPassword('');
-    setUsername('');
-    setError(''); // Clear any existing error
   };
 
   return (
@@ -122,65 +192,11 @@ function SignUpPrompt({ isOpen, onClose, onLogin }) {
                     )}
                   </div>
                 </div>
-                <FlashMessage message={successMessage} type="success" />
-                <FlashMessage message={errorMessage} type="error" />
-                <form onSubmit={handleSubmit}>
-                  {isSignUp && (
-                      <p className="my-4 text-gray-600">
-                        By signing up, you'll get access to the full user experience and all the features our app has to offer.
-                      </p>
-                  )}
-
-                  <div className="mb-4">
-                    <label htmlFor="username" className="block text-gray-700 text-sm font-bold mb-2">
-                      Username
-                    </label>
-                    <input
-                      type="text"
-                      id="username"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      className="w-full border border-gray-300 rounded py-2 px-3 text-gray-700 focus:outline-none focus:border-indigo-500"
-                      placeholder="Choose a username"
-                      required
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full border border-gray-300 rounded py-2 px-3 text-gray-700 focus:outline-none focus:border-indigo-500"
-                      placeholder="Your email"
-                      required
-                    />
-                    {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
-                  </div>
-                  <div className="mb-4">
-                    <label htmlFor="password" className="block text-gray-700 text-sm font-bold mb-2">
-                      Password
-                    </label>
-                    <input
-                      type="password"
-                      id="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full border border-gray-300 rounded py-2 px-3 text-gray-700 focus:outline-none focus:border-indigo-500"
-                      placeholder="Your password"
-                      required
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full bg-indigo-500 border border-transparent hover:bg-white hover:border-purple-600 hover:text-purple-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                  >
-                    {isSignUp ? 'Sign Up' : 'Sign In'}
-                  </button>
-                </form>
+                {isSignUp ? (
+                  <SignUpForm onSubmit={handleSubmit(onSubmit)} errors={errors} register={register} />
+                ) : (
+                  <SignInForm onSubmit={handleSubmit(onSubmit)} errors={errors} register={register} />
+                )}
 
                 <div className="line-container flex items-center my-4">
                   <div className="line flex-grow h-px bg-gray-300"></div>

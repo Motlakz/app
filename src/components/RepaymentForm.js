@@ -24,7 +24,7 @@ const Form = ({
         className={`border rounded-md focus:outline-indigo-300 animate__animated animate__bounceInLeft p-2 ${
           !validation.expense ? "border-red-500" : ""
         }`}
-        placeholder="Expense Title"
+        placeholder="Expense Type"
         value={newExpense}
         onChange={(e) => handleInputChange("expense", e.target.value)}
       />

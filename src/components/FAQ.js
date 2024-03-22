@@ -23,20 +23,20 @@ function FAQs() {
     ];
 
     return (
-        <section className="container m-4 p-6 rounded-lg px-24 my-20">
+        <section className="container m-4 p-6 rounded-lg px-16 my-20">
             <div className="images flex justify-between">
                 <span className="icon text-2xl">❓</span>
                 <span className="icon text-2xl">❓</span>
             </div>
-            <article className="text-center text-cyan-800 mb-4 animate__animated animate__fadeIn">
+            <article className="text-center text-cyan-800 mb-8 animate__animated animate__fadeIn">
                 <h2 className="font-bold text-2xl mb-4">Frequently Asked Questions</h2>
                 <p>Have questions? Explore our Frequently Asked Questions section for quick answers to your immediate queries. If your question isn't answered, feel free to reach out via the contact form listed below or on our contact page and we'll respond as soon as we can.</p>
              </article>
             {questions.map((item, index) => (
-                <div key={index} className={`dropdown animate__animated animate__slideIn${index % 2 === 0 ? 'Left' : 'Right'}`}>                
-                <button onClick={() => toggleOpen(index)} className={`toggle-btn ${openIndex === index ? 'open' : ''}`}>{item.question}</button>
+                <div key={index} className={`dropdown m-2 relative text-left bg-purple-500 animate__animated animate__slideIn${index % 2 === 0 ? 'Left' : 'Right'}`}>                
+                <button onClick={() => toggleOpen(index)} className={`toggle-btn text-white ${openIndex === index ? 'open' : ''}`}>{item.question}</button>
                     {openIndex === index && (
-                        <div className="content open">
+                        <div className="content open text-white max-h-0 overflow-hidden">
                             <p>{item.answer}</p>
                         </div>
                     )}

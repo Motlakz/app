@@ -5,7 +5,7 @@ import Navbar from './components/Navbar';
 import RepaymentsTracker from './components/Tracker';
 import About from './components/About';
 import Home from './components/Home';
-import { auth, signOut } from "./firebase";
+import { auth, signOut, onAuthStateChanged } from "./firebase-config";
 
 function App() {
   const [showSignUpPrompt, setShowSignUpPrompt] = useState(false);
@@ -20,7 +20,21 @@ function App() {
   });
   
   const [showLoginPromptAfterDelay, setShowLoginPromptAfterDelay] = useState(false);
-
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // User is signed in
+        setIsLoggedIn(true);
+      } else {
+        // User is signed out
+        setIsLoggedIn(false);
+      }
+    });
+  
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, []);
+  
   useEffect(() => {
     if (dataEntryCount >= 3 && !isLoggedIn) {
       setShowSignUpPrompt(true);

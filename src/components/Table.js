@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 
-const Table = ({ expenses, calculateRemainingAmount, openEditModal, deleteExpense }) => {
+const Table = ({ setFlashMessage, expenses: initialExpenses, calculateRemainingAmount, openEditModal }) => {
+    const [expenses, setExpenses] = useState(initialExpenses);
     const [selectedRows, setSelectedRows] = useState([]);
     const [files, setFiles] = useState(Array(expenses.length).fill(null));
-
+    
     const handleCheckboxChange = (index) => {
         if (selectedRows.includes(index)) {
             setSelectedRows(selectedRows.filter((rowIndex) => rowIndex !== index));
@@ -13,13 +14,20 @@ const Table = ({ expenses, calculateRemainingAmount, openEditModal, deleteExpens
     };
 
     const handleRemoveRow = (index) => {
-        deleteExpense([index]);
+        setExpenses((prevExpenses) => prevExpenses.filter((_, i) => i !== index));
+        setFlashMessage({ type: 'success', message: 'Row removed successfully.' });
+        setTimeout(() => setFlashMessage(null), 3000); // Clear the message after 3 seconds
     };
-
+    
     const handleDeleteSelectedRows = () => {
-        deleteExpense(selectedRows);
+        setExpenses((prevExpenses) =>
+            prevExpenses.filter((_, index) => !selectedRows.includes(index))
+        );
         setSelectedRows([]);
+        setFlashMessage({ type: 'success', message: 'Selected rows deleted successfully.' });
+        setTimeout(() => setFlashMessage(null), 3000); // Clear the message after 3 seconds
     };
+      
 
     const handleFileChange = (index, event) => {
         const fileInput = event.target;
@@ -178,7 +186,12 @@ const Table = ({ expenses, calculateRemainingAmount, openEditModal, deleteExpens
             </table>
             <div>
                 {selectedRows.length > 0 && (
-                    <button className="bg-red-500 hover:bg-red-600 text-white p-2 mt-4" onClick={handleDeleteSelectedRows}>Delete Selected Rows</button>
+                    <button
+                        className="bg-red-500 hover:bg-red-600 text-white p-2 mt-4"
+                        onClick={handleDeleteSelectedRows}
+                    >
+                        Delete Selected Rows
+                    </button>
                 )}
             </div>
         </section>
