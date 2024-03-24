@@ -32,7 +32,7 @@ const EditModal = ({
                         className={`border-2 rounded-md focus:outline-gray-300 animate__animated animate__bounceInLeft p-2 ${
                         !validation.expense ? "border-red-500" : ""
                         }`}
-                        placeholder="Expense Type"
+                        placeholder="Loan Type"
                         value={newExpense}
                         onChange={(e) => handleInputChange("expense", e.target.value)}
                     />
@@ -52,7 +52,7 @@ const EditModal = ({
                         className={`border-2 rounded-md focus:outline-gray-300 animate__animated animate__bounceInRight p-2 ${
                         !validation.amountReduced ? "border-red-500" : ""
                         }`}
-                        placeholder="Amount Deducted Monthly"
+                        placeholder="Monthly Repayments Monthly"
                         value={newAmountReduced}
                         onChange={(e) => handleInputChange("amountReduced", e.target.value)}
                     />

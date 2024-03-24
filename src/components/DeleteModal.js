@@ -1,6 +1,6 @@
 import React from 'react';
 
-const DeleteModal = ({ showDeleteModal, confirmDelete, cancelDelete }) => {
+const DeleteModal = ({ showDeleteModal, confirmDelete, cancelDelete, expensesToDelete }) => {
     return (
         showDeleteModal && (
             <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">

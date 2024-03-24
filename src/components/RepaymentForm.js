@@ -24,7 +24,7 @@ const Form = ({
         className={`border rounded-md focus:outline-indigo-300 animate__animated animate__bounceInLeft p-2 ${
           !validation.expense ? "border-red-500" : ""
         }`}
-        placeholder="Expense Type"
+        placeholder="Loan Type"
         value={newExpense}
         onChange={(e) => handleInputChange("expense", e.target.value)}
       />
@@ -42,7 +42,7 @@ const Form = ({
         className={`border rounded-md focus:outline-indigo-300animate__animated animate__bounceInRight p-2 ${
           !validation.amountReduced ? "border-red-500" : ""
         }`}
-        placeholder="Amount Deducted Monthly"
+        placeholder="Monthly Repayments"
         value={newAmountReduced}
         onChange={(e) => handleInputChange("amountReduced", e.target.value)}
       />
