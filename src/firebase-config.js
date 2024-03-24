@@ -30,4 +30,5 @@ const githubProvider = new GithubAuthProvider();
 export const getCurrentUser = () => {
   return auth.currentUser;
 };
+
 export { db, collection, doc, addDoc, getDocs, deleteDoc, updateDoc, onSnapshot, signOut, auth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, githubProvider, googleProvider };
