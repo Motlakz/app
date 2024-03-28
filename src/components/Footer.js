@@ -3,19 +3,26 @@ import logo from '../repay-smart-logo-secondary.jpeg';
 import TwitterLogo from '../assets/twitter.svg';
 import LinkedInLogo from '../assets/linkedin.svg';
 import GitHubLogo from '../assets/github.svg';
+import { Link } from "react-router-dom";
 
 function Footer() {
     return(
         <footer className="w-full bg-indigo-900 flex items-center justify-between p-2">
             <div className="socials flex gap-4 p-2 rounded-md bg-blue-50 text-medium">
                 <span className="icon">
-                    <img src={TwitterLogo} className="w-4 h-4" alt="Twitter logo" />
+                    <Link to="https://twitter.com/MotlalepulaSel6">
+                        <img src={TwitterLogo} className="w-4 h-4" alt="Twitter logo" />
+                    </Link>
                 </span>
                 <span className="icon">
-                    <img src={LinkedInLogo} className="w-4 h-4" alt="LinkedIn logo" />
+                    <Link to="https://www.linkedin.com/in/motlalepula-sello-37956813a/">
+                        <img src={LinkedInLogo} className="w-4 h-4" alt="LinkedIn logo" />
+                    </Link>
                 </span>
                 <span className="icon">
-                    <img src={GitHubLogo} className="w-4 h-4" alt="GitHub logo" />
+                    <Link to="https://github.com/Motlakz">
+                        <img src={GitHubLogo} className="w-4 h-4" alt="GitHub logo" />
+                    </Link>
                 </span>
             </div>
             <p className="copyright text-sm flex flex-col text-center text-blue-100">

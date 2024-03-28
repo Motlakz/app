@@ -1,7 +1,54 @@
 import React, { useState } from "react";
+import { db, doc } from "../firebase-config";
+import { writeBatch } from "firebase/firestore";
 
-const Table = ({ expenses, calculateRemainingAmount, openEditModal, deleteExpense }) => {
+const Table = ({ expenses, calculateRemainingAmount, openEditModal, setExpenses, setFlashMessage, deleteExpense }) => {
     const [files, setFiles] = useState(Array(expenses.length).fill(null));
+    const [selectedRows, setSelectedRows] = useState([]);
+
+    const handleRowSelect = (index) => {
+        setSelectedRows((prevSelectedRows) => {
+            if (prevSelectedRows.includes(index)) {
+                return prevSelectedRows.filter((i) => i !== index);
+            } else {
+                return [...prevSelectedRows, index];
+            }
+        });
+    };
+    
+    const handleSelectAll = () => {
+        if (selectedRows.length === expenses.length) {
+            setSelectedRows([]);
+        } else {
+            setSelectedRows(expenses.map((_, index) => index));
+        }
+    };
+
+    const deleteSelectedExpenses = async () => {
+        try {
+            const batch = writeBatch(db);
+            selectedRows.forEach((index) => {
+                const expenseRef = doc(db, "expenses", expenses[index].id);
+                batch.delete(expenseRef);
+            });
+            await batch.commit();
+    
+            setExpenses((prevExpenses) =>
+                prevExpenses.filter((_, i) => !selectedRows.includes(i))
+            );
+            setSelectedRows([]);
+            setFlashMessage({ type: 'success', message: 'Selected expenses deleted successfully.' });
+            setTimeout(() => {
+                setFlashMessage(null);
+            }, 1500);
+        } catch (e) {
+            console.error("Error deleting selected expenses: ", e);
+            setFlashMessage({ type: 'error', message: 'Error deleting selected expenses.' });
+            setTimeout(() => {
+                setFlashMessage(null);
+            }, 1500);
+        }
+    };
 
     const handleFileChange = (index, event) => {
         const fileInput = event.target;
@@ -36,8 +83,16 @@ const Table = ({ expenses, calculateRemainingAmount, openEditModal, deleteExpens
                 <caption className="font-semibold mb-2">Monthly Repayments Table</caption>
                 <thead>
                     <tr className="bg-purple-200">
+                        <th className="border border-purple-500 p-2">
+                            <input
+                                type="checkbox"
+                                className="form-checkbox"
+                                checked={selectedRows.length === expenses.length && expenses.length > 0}
+                                onChange={() => handleSelectAll()}
+                            />
+                        </th>
                         <th className="border border-purple-500 p-2">Title</th>
-                        <th className="border border-purple-500 p-2">Current Amount</th>
+                        <th className="border border-purple-500 p-2">Current Balance</th>
                         <th className="border border-purple-500 p-2">Monthly Repayments</th>
                         <th className="border border-purple-500 p-2">Deduction Date</th>
                         <th className="border border-purple-500 p-2">Annual Interest Rate (%)</th>
@@ -48,6 +103,15 @@ const Table = ({ expenses, calculateRemainingAmount, openEditModal, deleteExpens
                 </thead>
                 <tbody>
                     <tr className="text-gray-400">
+                        <td className="border border-purple-500 p-2">
+                            <input
+                                type="checkbox"
+                                className="form-checkbox"
+                                checked={selectedRows.includes()}
+                                onChange={() => handleRowSelect()}
+                                disabled
+                            />
+                        </td>
                         <td className="border border-gray-500 p-2">My Expense</td>
                         <td className="border border-gray-500 p-2">1700000</td>
                         <td className="border border-gray-500 p-2">14000</td>
@@ -83,7 +147,15 @@ const Table = ({ expenses, calculateRemainingAmount, openEditModal, deleteExpens
                     </tr>
 
                     {expenses.map((expense, index) => (
-                        <tr key={index} className="animate__animated animate__fadeInDown">
+                        <tr key={expense.id} className="animate__animated animate__fadeInDown">
+                            <td className="border border-purple-500 p-2">
+                                <input
+                                    type="checkbox"
+                                    className="form-checkbox"
+                                    checked={selectedRows.includes(index)}
+                                    onChange={() => handleRowSelect(index)}
+                                />
+                            </td>
                             <td className="border border-purple-500 p-2">{expense.title}</td>
                             <td className="border border-purple-500 p-2">{expense.initialAmount.toFixed(2)}</td>
                             <td className="border border-purple-500 p-2">{expense.amountReduced.toFixed(2)}</td>
@@ -142,6 +214,17 @@ const Table = ({ expenses, calculateRemainingAmount, openEditModal, deleteExpens
                     ))}
                 </tbody>
             </table>
+            <div className="mt-4">
+                <button
+                    className={`bg-red-500 hover:bg-red-600 text-white px-4 py-2 ${
+                        selectedRows.length === 0 ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                    onClick={deleteSelectedExpenses}
+                    disabled={selectedRows.length === 0}
+                >
+                    Delete All Selected
+                </button>
+            </div>
         </section>
     );
 };

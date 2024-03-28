@@ -33,13 +33,13 @@ const Form = ({
         className={`border rounded-md focus:outline-indigo-300 animate__animated animate__bounceInLeft p-2 ${
           !validation.initialAmount ? "border-red-500" : ""
         }`}
-        placeholder="Current Amount"
+        placeholder="Current Balance"
         value={newInitialAmount}
         onChange={(e) => handleInputChange("initialAmount", e.target.value)}
       />
       <input
         type="number"
-        className={`border rounded-md focus:outline-indigo-300animate__animated animate__bounceInRight p-2 ${
+        className={`border rounded-md focus:outline-indigo-300 animate__animated animate__bounceInRight p-2 ${
           !validation.amountReduced ? "border-red-500" : ""
         }`}
         placeholder="Monthly Repayments"

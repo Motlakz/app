@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, getDocs, addDoc, updateDoc, deleteDoc,collection, onSnapshot } from 'firebase/firestore';
-import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { getFirestore, doc, getDocs, setDoc, addDoc, updateDoc, deleteDoc,collection, onSnapshot } from 'firebase/firestore';
+import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, deleteUser } from 'firebase/auth';
 import { GoogleAuthProvider, GithubAuthProvider } from 'firebase/auth';
 
 const firebaseConfig = {
@@ -31,4 +31,4 @@ export const getCurrentUser = () => {
   return auth.currentUser;
 };
 
-export { db, doc, getDocs, addDoc, updateDoc, deleteDoc, collection, onSnapshot, auth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, githubProvider, googleProvider, signOut };
+export { db, doc, getDocs, addDoc, updateDoc, setDoc, deleteDoc, collection, onSnapshot, auth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, githubProvider, googleProvider, signOut, deleteUser };

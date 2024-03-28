@@ -4,9 +4,9 @@ import Table from "./Table";
 import FlashMessage from "./FlashMessage";
 import DeleteModal from "./DeleteModal";
 import EditModal from "./EditModal";
-import { db, doc, updateDoc, addDoc, deleteDoc, collection, getDocs } from "../firebase-config";
+import { auth, onAuthStateChanged, db, doc, updateDoc, addDoc, deleteDoc, collection, getDocs } from "../firebase-config";
 
-function RepaymentsTracker({ isLoggedIn, dataEntryCount, setDataEntryCount, setShowSignUpPrompt }) {
+function RepaymentsTracker({ isLoggedIn, setIsLoggedIn, dataEntryCount, setDataEntryCount, setShowSignUpPrompt }) {
     const [showEditModal, setShowEditModal] = useState(false);
     const [expenses, setExpenses] = useState([]);
     const [newExpense, setNewExpense] = useState("");
@@ -15,6 +15,7 @@ function RepaymentsTracker({ isLoggedIn, dataEntryCount, setDataEntryCount, setS
     const [newDeductionDate, setNewDeductionDate] = useState("");
     const [newAnnualInterestRate, setNewAnnualInterestRate] = useState("");
     const [editIndex, setEditIndex] = useState(null);
+    const [editedExpense, setEditedExpense] = useState(null);
     const [expenseToDelete, setExpenseToDelete] = useState(null);
     const [flashMessage, setFlashMessage] = useState(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -27,9 +28,21 @@ function RepaymentsTracker({ isLoggedIn, dataEntryCount, setDataEntryCount, setS
     });
 
     useEffect(() => {
-        if (dataEntryCount >= 3 && !isLoggedIn) {
-            setShowSignUpPrompt(true);
-        }
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user) {
+                setShowSignUpPrompt(false);
+            } else {
+                if (dataEntryCount >= 3) {
+                    setShowSignUpPrompt(true);
+                }
+            }
+            console.log('isLoggedIn:', isLoggedIn);
+            console.log('dataEntryCount:', dataEntryCount);
+        });
+    
+        return () => {
+            unsubscribe();
+        };
     }, [dataEntryCount, isLoggedIn, setShowSignUpPrompt]);
 
     useEffect(() => {
@@ -41,12 +54,27 @@ function RepaymentsTracker({ isLoggedIn, dataEntryCount, setDataEntryCount, setS
                     ...doc.data(),
                 }));
                 setExpenses(fetchedExpenses);
+                setDataEntryCount(fetchedExpenses.length);
             } catch (error) {
                 console.error("Error fetching expenses: ", error);
             }
         };
         fetchExpenses();
-    }, []);
+    }, [setDataEntryCount]);
+
+    useEffect(() => {
+        if (editedExpense) {
+          setExpenses((prevExpenses) => {
+            const updatedExpenses = [...prevExpenses];
+            const editedExpenseIndex = updatedExpenses.findIndex((expense) => expense.id === editedExpense.id);
+            if (editedExpenseIndex !== -1) {
+              updatedExpenses[editedExpenseIndex] = editedExpense;
+            }
+            return updatedExpenses;
+          });
+          setEditedExpense(null);
+        }
+    }, [editedExpense]);
 
     const handleInputChange = (field, value) => {
         setValidation((prevValidation) => ({
@@ -181,41 +209,59 @@ function RepaymentsTracker({ isLoggedIn, dataEntryCount, setDataEntryCount, setS
         setShowEditModal(false);
     }
 
-    const saveExpense = async () => {
+    const saveExpense = async (e) => {
+        e.preventDefault();
+      
         if (newExpense.trim() !== '') {
-            const updatedExpenseData = {
-                title: newExpense,
-                initialAmount: parseFloat(newInitialAmount),
-                amountReduced: parseFloat(newAmountReduced),
-                deductionDate: newDeductionDate,
-                annualInterestRate: parseFloat(newAnnualInterestRate),
-            };
-
-            try {
-                const expenseRef = doc(db, "expenses", expenses[editIndex].id);
-                await updateDoc(expenseRef, updatedExpenseData);
-                setExpenses((prevExpenses) => {
-                    const updatedExpenses = [...prevExpenses];
-                    updatedExpenses[editIndex] = updatedExpenseData;
-                    return updatedExpenses;
-                });
-                setEditIndex(null);
-                setFlashMessage({ type: 'info', message: 'Changes saved successfully.' });
-                setTimeout(() => {
-                    setFlashMessage(null);
-                }, 1500);
-                clearForm();
-            } catch (e) {
-                console.error("Error updating document: ", e);
-            }
-        } else {
-            setFlashMessage({ type: 'error', message: 'Please fill in the required fields.' });
-            setTimeout(() => {
+          const updatedExpenseData = {
+            title: newExpense,
+            initialAmount: parseFloat(newInitialAmount),
+            amountReduced: parseFloat(newAmountReduced),
+            deductionDate: newDeductionDate,
+            annualInterestRate: parseFloat(newAnnualInterestRate),
+          };
+      
+          try {
+            if (editIndex !== null) {
+              const expenseRef = doc(db, "expenses", expenses[editIndex].id);
+              await updateDoc(expenseRef, updatedExpenseData);
+      
+              // Fetch the updated expenses from the database
+              const querySnapshot = await getDocs(collection(db, "expenses"));
+              const fetchedExpenses = querySnapshot.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data(),
+              }));
+      
+              setExpenses(fetchedExpenses);
+              setFlashMessage({ type: 'info', message: 'Changes saved successfully.' });
+              setTimeout(() => {
                 setFlashMessage(null);
-            }, 1500);
+              }, 1500);
+              clearForm();
+            } else {
+              // If it's a new expense (not an edit), add it to the database
+              const docRef = await addDoc(collection(db, "expenses"), updatedExpenseData);
+              const newExpense = { ...updatedExpenseData, id: docRef.id };
+      
+              setExpenses((prevExpenses) => [...prevExpenses, newExpense]);
+              setFlashMessage({ type: 'success', message: 'Expense added successfully.' });
+              setTimeout(() => {
+                setFlashMessage(null);
+              }, 1500);
+              clearForm();
+            }
+          } catch (e) {
+            console.error("Error updating/adding document: ", e);
+          }
+        } else {
+          setFlashMessage({ type: 'error', message: 'Please fill in all the required fields.' });
+          setTimeout(() => {
+            setFlashMessage(null);
+          }, 1500);
         }
     };
-
+      
     const deleteExpense = (index) => {
         setExpenseToDelete(expenses[index]);
         setShowDeleteModal(true);
@@ -279,7 +325,8 @@ function RepaymentsTracker({ isLoggedIn, dataEntryCount, setDataEntryCount, setS
         <main className="min-h-screen max-w-full">
             <div className="relative overflow-x-hidden mt-24 m-4 bg-white text-[#181028] p-8 shadow-lg rounded-lg">
                 <h2 className="text-xl font-semibold mb-4">Loan Repayments Tracker</h2>
-                <div className={`${isLoggedIn || dataEntryCount < 3 ? '' : 'blur'}`}>
+                <div className={`${!isLoggedIn && dataEntryCount >= 3 ? 'blur' : ''}`}>
+
                     <Form
                         newExpense={newExpense}
                         newInitialAmount={newInitialAmount}
@@ -301,6 +348,7 @@ function RepaymentsTracker({ isLoggedIn, dataEntryCount, setDataEntryCount, setS
                         expenses={expenses}
                         calculateRemainingAmount={calculateRemainingAmount}
                         openEditModal={openEditModal}
+                        setExpenses={setExpenses}
                         deleteExpense={deleteExpense}
                     />
                     {showEditModal && (
@@ -330,7 +378,7 @@ function RepaymentsTracker({ isLoggedIn, dataEntryCount, setDataEntryCount, setS
                 </div>
                 {!isLoggedIn && dataEntryCount >= 3 && (
                     <div className="alert-msg absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
-                        <p className="text-indigo-300 text-2xl font-bold">Please log in to view or manage your data.</p>
+                        <p className="text-indigo-300 text-2xl font-bold">Please sign up/sign in to view or manage your data.</p>
                     </div>
                 )}
             </div>

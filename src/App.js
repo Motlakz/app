@@ -5,7 +5,7 @@ import Navbar from './components/Navbar';
 import RepaymentsTracker from './components/Tracker';
 import About from './components/About';
 import Home from './components/Home';
-import { auth, signOut, onAuthStateChanged } from "./firebase-config";
+import { auth, db, collection, getDocs, signOut, onAuthStateChanged } from "./firebase-config";
 
 function App() {
   const [showSignUpPrompt, setShowSignUpPrompt] = useState(false);
@@ -34,6 +34,26 @@ function App() {
     // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+        const fetchExpenses = async () => {
+            try {
+                const querySnapshot = await getDocs(collection(db, "expenses"));
+                const fetchedExpenses = querySnapshot.docs.map((doc) => ({
+                    id: doc.id,
+                    ...doc.data(),
+                }));
+                setDataEntryCount(fetchedExpenses.length);
+            } catch (error) {
+                console.error("Error fetching expenses: ", error);
+            }
+        };
+        fetchExpenses();
+    } else {
+        setDataEntryCount(0);
+    }
+  }, [isLoggedIn]);
   
   useEffect(() => {
     if (dataEntryCount >= 3 && !isLoggedIn) {
@@ -80,6 +100,7 @@ function App() {
           setShowSignUpPrompt={setShowSignUpPrompt}
           handleLogin={handleLogin}
           handleLogout={handleSignOut}
+          setDataEntryCount={setDataEntryCount}
           showLoginPromptAfterDelay={showLoginPromptAfterDelay}
           setShowLoginPromptAfterDelay={setShowLoginPromptAfterDelay}
         />
@@ -91,8 +112,10 @@ function App() {
             element={
               <RepaymentsTracker
                 isLoggedIn={isLoggedIn}
+                setIsLoggedIn={setIsLoggedIn}
                 dataEntryCount={dataEntryCount}
                 setDataEntryCount={setDataEntryCount}
+                showSignUpPrompt={showSignUpPrompt}
                 setShowSignUpPrompt={memoizedSetShowSignUpPrompt}
               />
             }

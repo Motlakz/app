@@ -1,121 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { auth, googleProvider, githubProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword } from '../firebase-config';
+import { SignInForm } from './SignInForm';
+import { SignUpForm } from './SignUpForm';
+import { auth, db, doc, setDoc, collection, googleProvider, githubProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword } from '../firebase-config';
 import { FaGithub, FaGoogle } from 'react-icons/fa';
-
-export const SignUpForm = ({ onSubmit, errors, register }) => (
-  <form onSubmit={onSubmit}>
-    <p className="my-4 text-gray-600">
-      By signing up, you'll get access to the full user experience and all the features our app has to offer.
-    </p>
-    <div className="mb-4">
-      <label htmlFor="username" className="block text-gray-700 text-sm font-bold mb-2">
-        Username
-      </label>
-      <input
-        type="text"
-        id="username"
-        {...register('username', { required: true })}
-        className="w-full border border-gray-300 rounded py-2 px-3 text-gray-700 focus:outline-none focus:border-indigo-500"
-        placeholder="Choose a username"
-      />
-      {errors.username && <span className="text-red-500">Username is required</span>}
-    </div>
-    <div className="mb-4">
-      <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">
-        Email
-      </label>
-      <input
-        type="email"
-        id="email"
-        {...register('email', {
-          required: true,
-          pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-        })}
-        className="w-full border border-gray-300 rounded py-2 px-3 text-gray-700 focus:outline-none focus:border-indigo-500"
-        placeholder="Your email"
-      />
-      {errors.email?.type === 'required' && <span className="text-red-500">Email is required</span>}
-      {errors.email?.type === 'pattern' && <span className="text-red-500">Invalid email format</span>}
-    </div>
-    <div className="mb-4">
-      <label htmlFor="password" className="block text-gray-700 text-sm font-bold mb-2">
-        Password
-      </label>
-      <input
-        type="password"
-        id="password"
-        {...register('password', { required: true, minLength: 6 })}
-        className="w-full border border-gray-300 rounded py-2 px-3 text-gray-700 focus:outline-none focus:border-indigo-500"
-        placeholder="Your password"
-      />
-      {errors.password?.type === 'required' && <span className="text-red-500">Password is required</span>}
-      {errors.password?.type === 'minLength' && <span className="text-red-500">Password should be at least 6 characters long</span>}
-    </div>
-    <button
-      type="submit"
-      className="w-full bg-indigo-500 border border-transparent hover:bg-white hover:border-purple-600 hover:text-purple-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-    >
-      Sign Up
-    </button>
-  </form>
-);
-
-export const SignInForm = ({ onSubmit, errors, register }) => (
-  <form onSubmit={onSubmit}>
-    <div className="mb-4">
-      <label htmlFor="username" className="block text-gray-700 text-sm font-bold mb-2">
-        Username
-      </label>
-      <input
-        type="text"
-        id="username"
-        {...register('username', { required: true })}
-        className="w-full border border-gray-300 rounded py-2 px-3 text-gray-700 focus:outline-none focus:border-indigo-500"
-        placeholder="Enter your username"
-      />
-      {errors.username && <span className="text-red-500">Username is required</span>}
-    </div>
-    <div className="mb-4">
-      <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">
-        Email
-      </label>
-      <input
-        type="email"
-        id="email"
-        {...register('email', {
-          required: true,
-          pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-        })}
-        className="w-full border border-gray-300 rounded py-2 px-3 text-gray-700 focus:outline-none focus:border-indigo-500"
-        placeholder="Your email"
-      />
-      {errors.email?.type === 'required' && <span className="text-red-500">Email is required</span>}
-      {errors.email?.type === 'pattern' && <span className="text-red-500">Invalid email format</span>}
-    </div>
-    <div className="mb-4">
-      <label htmlFor="password" className="block text-gray-700 text-sm font-bold mb-2">
-        Password
-      </label>
-      <input
-        type="password"
-        id="password"
-        {...register('password', { required: true, minLength: 6 })}
-        className="w-full border border-gray-300 rounded py-2 px-3 text-gray-700 focus:outline-none focus:border-indigo-500"
-        placeholder="Your password"
-      />
-      {errors.password?.type === 'required' && <span className="text-red-500">Password is required</span>}
-      {errors.password?.type === 'minLength' && <span className="text-red-500">Password should be at least 6 characters long</span>}
-    </div>
-    <button
-      type="submit"
-      className="w-full bg-indigo-500 border border-transparent hover:bg-white hover:border-purple-600 hover:text-purple-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-    >
-      Sign In
-    </button>
-  </form>
-);
 
 function SignUpPrompt({ isOpen, onClose }) {
   const [isSignUp, setIsSignUp] = useState(true);
@@ -125,12 +14,28 @@ function SignUpPrompt({ isOpen, onClose }) {
   const onSubmit = async (data) => {
     try {
       if (isSignUp) {
-        await createUserWithEmailAndPassword(auth, data.email, data.password);
+        // Create a new user with email and password
+        const userCredential = await createUserWithEmailAndPassword(
+          auth,
+          data.email,
+          data.password
+        );
+        const user = userCredential.user;
+  
+        // Store user information in Firestore
+        const userRef = doc(collection(db, 'users'), user.uid);
+        await setDoc(userRef, {
+          username: data.username, // Assuming you have a 'username' field in your form data
+          email: data.email,
+          // Add any other relevant user data here
+        });
+  
         console.log('Sign up successful!');
       } else {
         await signInWithEmailAndPassword(auth, data.email, data.password);
         console.log('Sign in successful!');
       }
+  
       onClose();
       navigate('/tracker');
     } catch (error) {
@@ -220,12 +125,12 @@ function SignUpPrompt({ isOpen, onClose }) {
                   </button>
                 </div>
                 <div className="mt-4 text-center">
-                  <button
+                  <span
                     onClick={toggleForm}
-                    className="text-indigo-500 hover:text-indigo-700 font-semibold"
+                    className="cursor-pointer text-indigo-500 hover:text-indigo-700 font-semibold"
                   >
                     {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
-                  </button>
+                  </span>
                 </div>
               </div>
             </div>
