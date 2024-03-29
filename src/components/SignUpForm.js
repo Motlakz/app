@@ -1,6 +1,14 @@
-import React from "react";
-export const SignUpForm = ({ onSubmit, errors, register }) => (
-<form onSubmit={onSubmit}>
+// SignUpForm.js
+import React, { useEffect } from 'react';
+
+export const SignUpForm = ({ onSubmit, errors, register, errorMessage, clearErrorMessage }) => {
+  useEffect(() => {
+    // Clear the error message when the component unmounts
+    return () => clearErrorMessage();
+  }, [clearErrorMessage]);
+
+  return (
+    <form onSubmit={onSubmit}>
       <p className="my-4 text-gray-600">
         By signing up, you'll get access to the full user experience and all the features our app has to offer.
       </p>
@@ -48,6 +56,7 @@ export const SignUpForm = ({ onSubmit, errors, register }) => (
         {errors.password?.type === 'required' && <span className="text-red-500">Password is required</span>}
         {errors.password?.type === 'minLength' && <span className="text-red-500">Password should be at least 6 characters long</span>}
       </div>
+      {errorMessage && <span className="text-red-500">{errorMessage}</span>}
       <button
         type="submit"
         className="w-full bg-indigo-500 border border-transparent hover:bg-white hover:border-purple-600 hover:text-purple-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
@@ -55,4 +64,5 @@ export const SignUpForm = ({ onSubmit, errors, register }) => (
         Sign Up
       </button>
     </form>
-);
+  );
+};

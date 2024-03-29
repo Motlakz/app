@@ -26,41 +26,75 @@ function RepaymentsTracker({ isLoggedIn, setIsLoggedIn, dataEntryCount, setDataE
         deductionDate: true,
         annualInterestRate: true,
     });
+    const [hasSignedUpBefore, setHasSignedUpBefore] = useState(false);
+
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
+            setIsLoggedIn(user !== null);
             if (user) {
                 setShowSignUpPrompt(false);
+                if (!hasSignedUpBefore) {
+                    setHasSignedUpBefore(true);
+                }
             } else {
-                if (dataEntryCount >= 3) {
+                if (dataEntryCount >= 3 && hasSignedUpBefore) {
                     setShowSignUpPrompt(true);
                 }
             }
             console.log('isLoggedIn:', isLoggedIn);
             console.log('dataEntryCount:', dataEntryCount);
+            console.log('hasSignedUpBefore:', hasSignedUpBefore);
         });
-    
+
         return () => {
             unsubscribe();
         };
-    }, [dataEntryCount, isLoggedIn, setShowSignUpPrompt]);
+    }, [dataEntryCount, isLoggedIn, setIsLoggedIn, setShowSignUpPrompt, hasSignedUpBefore]);
 
     useEffect(() => {
         const fetchExpenses = async () => {
-            try {
-                const querySnapshot = await getDocs(collection(db, "expenses"));
-                const fetchedExpenses = querySnapshot.docs.map((doc) => ({
-                    id: doc.id,
-                    ...doc.data(),
+          try {
+            if (isLoggedIn) {
+              // Fetch expenses for the signed-in user from Firestore
+              const userId = auth.currentUser.uid;
+              const expensesRef = collection(db, "users", userId, "expenses");
+              const querySnapshot = await getDocs(expensesRef);
+              const fetchedExpenses = querySnapshot.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data(),
+              }));
+              setExpenses(fetchedExpenses);
+              setDataEntryCount(fetchedExpenses.length);
+      
+              // Check if there are any expenses in local storage and migrate them to Firestore
+              const storedExpenses = localStorage.getItem('expenses');
+              if (storedExpenses) {
+                const localExpenses = JSON.parse(storedExpenses);
+                await Promise.all(localExpenses.map(async (expense) => {
+                  try {
+                    await addDoc(expensesRef, expense);
+                  } catch (e) {
+                    console.error("Error migrating expense: ", e);
+                  }
                 }));
-                setExpenses(fetchedExpenses);
-                setDataEntryCount(fetchedExpenses.length);
-            } catch (error) {
-                console.error("Error fetching expenses: ", error);
+                localStorage.removeItem('expenses');
+              }
+            } else {
+              // Retrieve expenses for non-signed-up users from local storage
+              const storedExpenses = localStorage.getItem('expenses');
+              if (storedExpenses) {
+                setExpenses(JSON.parse(storedExpenses));
+                setDataEntryCount(JSON.parse(storedExpenses).length);
+              }
             }
+          } catch (error) {
+            console.error("Error fetching expenses: ", error);
+          }
         };
+      
         fetchExpenses();
-    }, [setDataEntryCount]);
+    }, [isLoggedIn, setDataEntryCount]);
 
     useEffect(() => {
         if (editedExpense) {
@@ -135,32 +169,45 @@ function RepaymentsTracker({ isLoggedIn, setIsLoggedIn, dataEntryCount, setDataE
         if (!areInputsValid) {
             return;
         }
-
+    
         const newExpenseData = {
             title: newExpense,
             initialAmount: parseFloat(newInitialAmount),
             amountReduced: parseFloat(newAmountReduced),
             deductionDate: newDeductionDate,
             annualInterestRate: parseFloat(newAnnualInterestRate),
+            userId: auth.currentUser ? auth.currentUser.uid : null,
         };
-
-        try {
-            const docRef = await addDoc(collection(db, "expenses"), newExpenseData);
-            console.log("Document written with ID: ", docRef.id);
-            setExpenses((prevExpenses) => [
-                ...prevExpenses,
-                { ...newExpenseData, id: docRef.id },
-            ]);
-            clearForm();
-            setFlashMessage({ type: 'success', message: 'Expense added successfully.' });
-            setTimeout(() => {
-                setFlashMessage(null);
-            }, 1500);
-            // Increment the data entry counter
-            setDataEntryCount((prevCount) => prevCount + 1);
-        } catch (e) {
-            console.error("Error adding document: ", e);
+    
+        if (isLoggedIn) {
+            // Save the expense to Firestore for signed-in users
+            try {
+                const expensesRef = collection(db, "users", auth.currentUser.uid, "expenses");
+                const docRef = await addDoc(expensesRef, newExpenseData);
+                console.log("Document written with ID: ", docRef.id);
+                setExpenses((prevExpenses) => [
+                    ...prevExpenses,
+                    { ...newExpenseData, id: docRef.id },
+                ]);
+            } catch (e) {
+                console.error("Error adding document: ", e);
+            }
+        } else {
+            // Save the expense to local storage for non-signed-up users
+            const storedExpenses = localStorage.getItem('expenses');
+            const expenses = storedExpenses ? JSON.parse(storedExpenses) : [];
+            const newExpense = { ...newExpenseData, id: Date.now().toString() };
+            expenses.push(newExpense);
+            localStorage.setItem('expenses', JSON.stringify(expenses));
+            setExpenses((prevExpenses) => [...prevExpenses, newExpense]);
         }
+    
+        clearForm();
+        setFlashMessage({ type: 'success', message: 'Expense added successfully.' });
+        setTimeout(() => {
+            setFlashMessage(null);
+        }, 1500);
+        setDataEntryCount((prevCount) => prevCount + 1);
     };
 
     const validateInputs = () => {
@@ -211,60 +258,76 @@ function RepaymentsTracker({ isLoggedIn, setIsLoggedIn, dataEntryCount, setDataE
 
     const saveExpense = async (e) => {
         e.preventDefault();
-      
+    
         if (newExpense.trim() !== '') {
-          const updatedExpenseData = {
-            title: newExpense,
-            initialAmount: parseFloat(newInitialAmount),
-            amountReduced: parseFloat(newAmountReduced),
-            deductionDate: newDeductionDate,
-            annualInterestRate: parseFloat(newAnnualInterestRate),
-          };
-      
-          try {
-            if (editIndex !== null) {
-              const expenseRef = doc(db, "expenses", expenses[editIndex].id);
-              await updateDoc(expenseRef, updatedExpenseData);
-      
-              // Fetch the updated expenses from the database
-              const querySnapshot = await getDocs(collection(db, "expenses"));
-              const fetchedExpenses = querySnapshot.docs.map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
-              }));
-      
-              setExpenses(fetchedExpenses);
-              setFlashMessage({ type: 'info', message: 'Changes saved successfully.' });
-              setTimeout(() => {
-                setFlashMessage(null);
-              }, 1500);
-              clearForm();
-            } else {
-              // If it's a new expense (not an edit), add it to the database
-              const docRef = await addDoc(collection(db, "expenses"), updatedExpenseData);
-              const newExpense = { ...updatedExpenseData, id: docRef.id };
-      
-              setExpenses((prevExpenses) => [...prevExpenses, newExpense]);
-              setFlashMessage({ type: 'success', message: 'Expense added successfully.' });
-              setTimeout(() => {
-                setFlashMessage(null);
-              }, 1500);
-              clearForm();
+            const updatedExpenseData = {
+                title: newExpense,
+                initialAmount: parseFloat(newInitialAmount),
+                amountReduced: parseFloat(newAmountReduced),
+                deductionDate: newDeductionDate,
+                annualInterestRate: parseFloat(newAnnualInterestRate),
+            };
+    
+            try {
+                if (editIndex !== null) {
+                    if (isLoggedIn) {
+                        // Update the expense in Firestore for signed-in users
+                        const expenseRef = doc(db, "users", auth.currentUser.uid, "expenses", expenses[editIndex].id);
+                        await updateDoc(expenseRef, updatedExpenseData);
+                    } else {
+                        // Update the expense in local storage for non-signed-up users
+                        const storedExpenses = localStorage.getItem('expenses');
+                        const expenses = storedExpenses ? JSON.parse(storedExpenses) : [];
+                        expenses[editIndex] = { ...expenses[editIndex], ...updatedExpenseData };
+                        localStorage.setItem('expenses', JSON.stringify(expenses));
+                    }
+    
+                    setExpenses((prevExpenses) => {
+                        const updatedExpenses = [...prevExpenses];
+                        updatedExpenses[editIndex] = { ...updatedExpenses[editIndex], ...updatedExpenseData };
+                        return updatedExpenses;
+                    });
+    
+                    setFlashMessage({ type: 'info', message: 'Changes saved successfully.' });
+                    setTimeout(() => {
+                        setFlashMessage(null);
+                    }, 1500);
+                } else {
+                    // If it's a new expense (not an edit), add it to the database or local storage
+                    await addExpense();
+                }
+                clearForm();
+            } catch (e) {
+                console.error("Error updating/adding document: ", e);
             }
-          } catch (e) {
-            console.error("Error updating/adding document: ", e);
-          }
         } else {
-          setFlashMessage({ type: 'error', message: 'Please fill in all the required fields.' });
-          setTimeout(() => {
-            setFlashMessage(null);
-          }, 1500);
+            setFlashMessage({ type: 'error', message: 'Please fill in all the required fields.' });
+            setTimeout(() => {
+                setFlashMessage(null);
+            }, 1500);
         }
     };
       
-    const deleteExpense = (index) => {
-        setExpenseToDelete(expenses[index]);
-        setShowDeleteModal(true);
+    const deleteExpense = async (index) => {
+        try {
+            if (isLoggedIn) {
+                // Delete the expense from Firestore for signed-in users
+                const expenseRef = doc(db, "users", auth.currentUser.uid, "expenses", expenses[index].id);
+                await deleteDoc(expenseRef);
+            } else {
+                // Delete the expense from local storage for non-signed-up users
+                const storedExpenses = localStorage.getItem('expenses');
+                const expenses = storedExpenses ? JSON.parse(storedExpenses) : [];
+                expenses.splice(index, 1);
+                localStorage.setItem('expenses', JSON.stringify(expenses));
+            }
+    
+            setExpenses((prevExpenses) => prevExpenses.filter((_, i) => i !== index));
+            setFlashMessage({ type: 'success', message: 'Expense deleted successfully.' });
+            setTimeout(() => setFlashMessage(null), 1500);
+        } catch (e) {
+            console.error("Error deleting document: ", e);
+        }
     };
 
     const confirmDelete = async () => {
@@ -325,7 +388,7 @@ function RepaymentsTracker({ isLoggedIn, setIsLoggedIn, dataEntryCount, setDataE
         <main className="min-h-screen max-w-full">
             <div className="relative overflow-x-hidden mt-24 m-4 bg-white text-[#181028] p-8 shadow-lg rounded-lg">
                 <h2 className="text-xl font-semibold mb-4">Loan Repayments Tracker</h2>
-                <div className={`${!isLoggedIn && dataEntryCount >= 3 ? 'blur' : ''}`}>
+                <div className={`${isLoggedIn || (!isLoggedIn && !hasSignedUpBefore) ? '' : 'blur'}`}>
 
                     <Form
                         newExpense={newExpense}
@@ -376,9 +439,9 @@ function RepaymentsTracker({ isLoggedIn, setIsLoggedIn, dataEntryCount, setDataE
                         expenseToDelete={expenseToDelete}
                     />
                 </div>
-                {!isLoggedIn && dataEntryCount >= 3 && (
+                {!isLoggedIn && hasSignedUpBefore && (
                     <div className="alert-msg absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
-                        <p className="text-indigo-300 text-2xl font-bold">Please sign up/sign in to view or manage your data.</p>
+                        <p className="text-indigo-300 text-2xl font-bold">Please sign up/sign in to securely view or manage your data.</p>
                     </div>
                 )}
             </div>

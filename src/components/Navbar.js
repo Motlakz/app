@@ -6,7 +6,7 @@ import UserDropdown from './Dropdown';
 import Profile from './Profile';
 import FlashMessage from './FlashMessage';
 
-function Navbar({ isLoggedIn, showSignUpPrompt, setShowSignUpPrompt, showLoginPromptAfterDelay, setShowLoginPromptAfterDelay, handleLogin, handleLogout, username, email, setDataEntryCount }) {
+function Navbar({ isLoggedIn, showSignUpPrompt, setShowSignUpPrompt, showLoginPromptAfterSignOut, setShowLoginPromptAfterSignOut, handleLogin, handleLogout, username, email, setDataEntryCount }) {
   const [showProfile, setShowProfile] = useState(false);
   const [flashMessage, setFlashMessage] = useState(null);
 
@@ -24,7 +24,7 @@ function Navbar({ isLoggedIn, showSignUpPrompt, setShowSignUpPrompt, showLoginPr
       setFlashMessage({ type: 'success', message: 'Sign out successful!' });
       setTimeout(() => {
         setFlashMessage(null);
-      }, 1500);
+      }, 500);
     } catch (error) {
       console.error('Error signing out:', error);
     }
@@ -78,14 +78,15 @@ function Navbar({ isLoggedIn, showSignUpPrompt, setShowSignUpPrompt, showLoginPr
           />
         )}
       </div>
-      {(showSignUpPrompt || showLoginPromptAfterDelay) && (
+      {(showSignUpPrompt || showLoginPromptAfterSignOut) && (
         <SignUpPrompt
-          isOpen={showSignUpPrompt || showLoginPromptAfterDelay}
+          isOpen={showSignUpPrompt || showLoginPromptAfterSignOut}
           onClose={() => {
             setShowSignUpPrompt(false);
-            setShowLoginPromptAfterDelay(false);
+            setShowLoginPromptAfterSignOut(false);
           }}
           onLogin={handleLogin}
+          setFlashMessage={setFlashMessage}
         />
       )}
       {showProfile && (

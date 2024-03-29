@@ -84,7 +84,7 @@ ul li a:hover{
 }
 
 .square-in-center {
-  animation: .8s square-in-center ease forwards;
+  animation: 1.5s square-in-center ease forwards;
 }
 
 .content {

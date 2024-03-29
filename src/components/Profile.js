@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { auth, deleteUser } from '../firebase-config';
-import { collection, deleteDoc, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs } from 'firebase/firestore';
 import { db } from '../firebase-config';
+import { useNavigate } from 'react-router-dom';
 
-const Profile = ({ onClose, setDataEntryCount, setShowSignUpPrompt }) => {
+const Profile = ({ onClose, setDataEntryCount, setFlashMessage }) => {
   const user = auth.currentUser;
   const [username, setUsername] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUsername = async () => {
@@ -24,9 +26,8 @@ const Profile = ({ onClose, setDataEntryCount, setShowSignUpPrompt }) => {
     try {
       if (user) {
         // Delete user's loan tracker data from Firestore
-        const expensesRef = collection(db, 'expenses');
-        const q = query(expensesRef, where('userId', '==', user.uid));
-        const querySnapshot = await getDocs(q);
+        const expensesRef = collection(db, 'users', user.uid, 'expenses');
+        const querySnapshot = await getDocs(expensesRef);
         const deletePromises = querySnapshot.docs.map((doc) => deleteDoc(doc.ref));
         await Promise.all(deletePromises);
 
@@ -37,16 +38,17 @@ const Profile = ({ onClose, setDataEntryCount, setShowSignUpPrompt }) => {
         // Delete user account from Firebase Authentication
         await deleteUser(user);
 
-        // Reset the count and blur
+        // Reset the count and navigate to the home page
         setDataEntryCount(0);
-        setShowSignUpPrompt(false);
+        navigate('/');
 
-        alert('User account and associated data deleted successfully!');
-        onClose(); // Close the profile modal after successful deletion
+        setFlashMessage({ type: 'success', message: 'Account deleted successfully.' });
+        setTimeout(() => setFlashMessage(null), 1500);
       }
     } catch (error) {
-      alert('Error deleting user account and data:', error);
       console.error('Error deleting user account and data:', error);
+      setFlashMessage({ type: 'error', message: 'Failed to delete account. Please try again.' });
+      setTimeout(() => setFlashMessage(null), 1500);
     }
   };
 

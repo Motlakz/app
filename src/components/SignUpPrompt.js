@@ -5,8 +5,10 @@ import { SignInForm } from './SignInForm';
 import { SignUpForm } from './SignUpForm';
 import { auth, db, doc, setDoc, collection, googleProvider, githubProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword } from '../firebase-config';
 import { FaGithub, FaGoogle } from 'react-icons/fa';
+import FlashMessage from './FlashMessage';
 
-function SignUpPrompt({ isOpen, onClose }) {
+function SignUpPrompt({ isOpen, onClose, flashMessage, setFlashMessage }) {
+  const [errorMessage, setErrorMessage] = useState('');
   const [isSignUp, setIsSignUp] = useState(true);
   const navigate = useNavigate();
   const { register, handleSubmit, formState: { errors } } = useForm();
@@ -25,43 +27,64 @@ function SignUpPrompt({ isOpen, onClose }) {
         // Store user information in Firestore
         const userRef = doc(collection(db, 'users'), user.uid);
         await setDoc(userRef, {
-          username: data.username, // Assuming you have a 'username' field in your form data
+          username: data.username,
           email: data.email,
-          // Add any other relevant user data here
+          password: data.password,
         });
   
-        console.log('Sign up successful!');
+        setFlashMessage({ type: 'success', message: 'Sign up successful!' });
+        onClose();
+        setTimeout(() => {
+          setFlashMessage(null);
+        }, 1500);
       } else {
         await signInWithEmailAndPassword(auth, data.email, data.password);
-        console.log('Sign in successful!');
+        onClose();
+        setFlashMessage({ type: 'success', message: 'Sign in successful!' });
+        setTimeout(() => {
+          setFlashMessage(null);
+        }, 1500);
       }
   
-      onClose();
       navigate('/tracker');
+      setErrorMessage(''); // Clear the error message after successful operation
     } catch (error) {
-      console.error('Error:', isSignUp ? 'signing up' : 'signing in', error);
+      const errorMessage = isSignUp
+        ? `Error signing up: ${error.message}`
+        : `Error signing in: ${error.message}`;
+      setErrorMessage(errorMessage);
     }
   };
 
   const handleGitHubSignIn = async () => {
     try {
       await signInWithPopup(auth, githubProvider);
-      console.log('Sign in successful!');
-      onClose();
+      setFlashMessage({ type: 'success', message: 'Sign in successful!' });
+      setTimeout(() => {
+        setFlashMessage(null);
+      }, 1500);
       navigate('/tracker');
     } catch (error) {
-      console.error('Error with GitHub sign-in:', error);
+      setFlashMessage({ type: 'error', message: 'Error signing in with GitHub. Try another method' });
+      setTimeout(() => {
+        setFlashMessage(null);
+      }, 1500);
     }
   };
 
   const handleGoogleSignIn = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
-      console.log('Sign in successful!');
-      onClose();
+      setFlashMessage({ type: 'success', message: 'Sign in successful!' });
+      setTimeout(() => {
+        setFlashMessage(null);
+      }, 1500);
       navigate('/tracker');
     } catch (error) {
-      console.error('Error with Google sign-in:', error);
+      setFlashMessage({ type: 'error', message: 'Error signing in with Google. Try another method' });
+      setTimeout(() => {
+        setFlashMessage(null);
+      }, 1500);
     }
   };
 
@@ -71,6 +94,7 @@ function SignUpPrompt({ isOpen, onClose }) {
 
   return (
     <>
+      <FlashMessage flashMessage={flashMessage} />
       {isOpen && (
         <div className="form-modal square-in-center fixed z-10 inset-0 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen bg-black bg-opacity-50">
@@ -98,11 +122,22 @@ function SignUpPrompt({ isOpen, onClose }) {
                   </div>
                 </div>
                 {isSignUp ? (
-                  <SignUpForm onSubmit={handleSubmit(onSubmit)} errors={errors} register={register} />
+                  <SignUpForm
+                    onSubmit={handleSubmit(onSubmit)}
+                    errors={errors}
+                    register={register}
+                    errorMessage={errorMessage}
+                    clearErrorMessage={() => setErrorMessage('')}
+                  />
                 ) : (
-                  <SignInForm onSubmit={handleSubmit(onSubmit)} errors={errors} register={register} />
+                  <SignInForm
+                    onSubmit={handleSubmit(onSubmit)}
+                    errors={errors}
+                    register={register}
+                    errorMessage={errorMessage}
+                    clearErrorMessage={() => setErrorMessage('')}
+                  />
                 )}
-
                 <div className="line-container flex items-center my-4">
                   <div className="line flex-grow h-px bg-gray-300"></div>
                   <p className="center-text px-4 text-gray-500">OR</p>
