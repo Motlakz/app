@@ -52,7 +52,10 @@ function SignUpPrompt({ isOpen, onClose, flashMessage, setFlashMessage }) {
       const errorMessage = isSignUp
         ? `Error signing up: ${error.message}`
         : `Error signing in: ${error.message}`;
-      setErrorMessage(errorMessage);
+      setFlashMessage({ type: 'error', message: errorMessage });
+      setTimeout(() => {
+        setFlashMessage(null);
+      }, 1500);
     }
   };
 

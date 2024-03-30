@@ -30,71 +30,40 @@ function RepaymentsTracker({ isLoggedIn, setIsLoggedIn, dataEntryCount, setDataE
 
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            setIsLoggedIn(user !== null);
-            if (user) {
-                setShowSignUpPrompt(false);
-                if (!hasSignedUpBefore) {
-                    setHasSignedUpBefore(true);
-                }
-            } else {
-                if (dataEntryCount >= 3 && hasSignedUpBefore) {
-                    setShowSignUpPrompt(true);
-                }
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+          setIsLoggedIn(user !== null);
+          if (user) {
+            setShowSignUpPrompt(false);
+            if (!hasSignedUpBefore) {
+              setHasSignedUpBefore(true);
             }
-            console.log('isLoggedIn:', isLoggedIn);
-            console.log('dataEntryCount:', dataEntryCount);
-            console.log('hasSignedUpBefore:', hasSignedUpBefore);
-        });
-
-        return () => {
-            unsubscribe();
-        };
-    }, [dataEntryCount, isLoggedIn, setIsLoggedIn, setShowSignUpPrompt, hasSignedUpBefore]);
-
-    useEffect(() => {
-        const fetchExpenses = async () => {
-          try {
-            if (isLoggedIn) {
-              // Fetch expenses for the signed-in user from Firestore
-              const userId = auth.currentUser.uid;
-              const expensesRef = collection(db, "users", userId, "expenses");
-              const querySnapshot = await getDocs(expensesRef);
-              const fetchedExpenses = querySnapshot.docs.map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
-              }));
-              setExpenses(fetchedExpenses);
-              setDataEntryCount(fetchedExpenses.length);
-      
-              // Check if there are any expenses in local storage and migrate them to Firestore
-              const storedExpenses = localStorage.getItem('expenses');
-              if (storedExpenses) {
-                const localExpenses = JSON.parse(storedExpenses);
-                await Promise.all(localExpenses.map(async (expense) => {
-                  try {
-                    await addDoc(expensesRef, expense);
-                  } catch (e) {
-                    console.error("Error migrating expense: ", e);
-                  }
-                }));
-                localStorage.removeItem('expenses');
-              }
-            } else {
-              // Retrieve expenses for non-signed-up users from local storage
-              const storedExpenses = localStorage.getItem('expenses');
-              if (storedExpenses) {
-                setExpenses(JSON.parse(storedExpenses));
-                setDataEntryCount(JSON.parse(storedExpenses).length);
-              }
+            // Fetch expenses from Firestore for signed-in users
+            const expensesRef = collection(db, "users", user.uid, "expenses");
+            const querySnapshot = await getDocs(expensesRef);
+            const fetchedExpenses = querySnapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            }));
+            setExpenses(fetchedExpenses);
+          } else {
+            if (dataEntryCount >= 3 && hasSignedUpBefore) {
+              setShowSignUpPrompt(true);
             }
-          } catch (error) {
-            console.error("Error fetching expenses: ", error);
+            // Retrieve expenses from local storage for non-signed-up users
+            const storedExpenses = localStorage.getItem("expenses");
+            if (storedExpenses) {
+              setExpenses(JSON.parse(storedExpenses));
+            }
           }
-        };
+          console.log("isLoggedIn:", isLoggedIn);
+          console.log("dataEntryCount:", dataEntryCount);
+          console.log("hasSignedUpBefore:", hasSignedUpBefore);
+        });
       
-        fetchExpenses();
-    }, [isLoggedIn, setDataEntryCount]);
+        return () => {
+          unsubscribe();
+        };
+      }, [dataEntryCount, isLoggedIn, setIsLoggedIn, setShowSignUpPrompt, hasSignedUpBefore]);
 
     useEffect(() => {
         if (editedExpense) {
@@ -236,20 +205,18 @@ function RepaymentsTracker({ isLoggedIn, setIsLoggedIn, dataEntryCount, setDataE
         return areInputsValid;
     };
 
-    const openEditModal = (index) => {
-        // Set the state variables with the details of the expense to be edited
-        const expenseToEdit = expenses[index];
-        setNewExpense(expenseToEdit.title);
-        setNewInitialAmount(expenseToEdit.initialAmount.toString());
-        setNewAmountReduced(expenseToEdit.amountReduced.toString());
-        setNewDeductionDate(expenseToEdit.deductionDate);
-        setNewAnnualInterestRate(expenseToEdit.annualInterestRate.toString());
-
-        // Set the edit index to the current index
-        setEditIndex(index);
-
-        // Open the edit modal
-        setShowEditModal(true);
+    const openEditModal = (expenseId) => {
+        const index = expenses.findIndex((expense) => expense.id === expenseId);
+        if (index !== -1) {
+            const expenseToEdit = expenses[index];
+            setNewExpense(expenseToEdit.title);
+            setNewInitialAmount(expenseToEdit.initialAmount.toString());
+            setNewAmountReduced(expenseToEdit.amountReduced.toString());
+            setNewDeductionDate(expenseToEdit.deductionDate);
+            setNewAnnualInterestRate(expenseToEdit.annualInterestRate.toString());
+            setEditIndex(index);
+            setShowEditModal(true);
+        }
     };
 
     const cancelEdit = () => {
@@ -308,41 +275,38 @@ function RepaymentsTracker({ isLoggedIn, setIsLoggedIn, dataEntryCount, setDataE
         }
     };
       
-    const deleteExpense = async (index) => {
-        try {
-            if (isLoggedIn) {
-                // Delete the expense from Firestore for signed-in users
-                const expenseRef = doc(db, "users", auth.currentUser.uid, "expenses", expenses[index].id);
-                await deleteDoc(expenseRef);
-            } else {
-                // Delete the expense from local storage for non-signed-up users
-                const storedExpenses = localStorage.getItem('expenses');
-                const expenses = storedExpenses ? JSON.parse(storedExpenses) : [];
-                expenses.splice(index, 1);
-                localStorage.setItem('expenses', JSON.stringify(expenses));
-            }
-    
-            setExpenses((prevExpenses) => prevExpenses.filter((_, i) => i !== index));
-            setFlashMessage({ type: 'success', message: 'Expense deleted successfully.' });
-            setTimeout(() => setFlashMessage(null), 1500);
-        } catch (e) {
-            console.error("Error deleting document: ", e);
+    const deleteExpense = (expenseId) => {
+        const index = expenses.findIndex((expense) => expense.id === expenseId);
+        if (index !== -1) {
+          const expenseToDelete = expenses[index];
+          setExpenseToDelete(expenseToDelete);
+          setShowDeleteModal(true);
         }
     };
 
     const confirmDelete = async () => {
         try {
-            if (expenseToDelete) {
-                const expenseRef = doc(db, "expenses", expenseToDelete.id);
-                await deleteDoc(expenseRef);
-                setExpenses((prevExpenses) => prevExpenses.filter((expense) => expense.id !== expenseToDelete.id));
-                setExpenseToDelete(null);
-                setShowDeleteModal(false);
-                setFlashMessage({ type: 'success', message: 'Expense deleted successfully.' });
-                setTimeout(() => setFlashMessage(null), 1500);
+          if (expenseToDelete) {
+            if (isLoggedIn) {
+              // Delete the expense from Firestore for signed-in users
+              const expenseRef = doc(db, "users", auth.currentUser.uid, "expenses", expenseToDelete.id);
+              await deleteDoc(expenseRef);
+            } else {
+              // Delete the expense from local storage for non-signed-up users
+              const storedExpenses = localStorage.getItem('expenses');
+              const expenses = storedExpenses ? JSON.parse(storedExpenses) : [];
+              const updatedExpenses = expenses.filter((expense) => expense.id !== expenseToDelete.id);
+              localStorage.setItem('expenses', JSON.stringify(updatedExpenses));
             }
+      
+            setExpenses((prevExpenses) => prevExpenses.filter((expense) => expense.id !== expenseToDelete.id));
+            setExpenseToDelete(null);
+            setShowDeleteModal(false);
+            setFlashMessage({ type: 'success', message: 'Expense deleted successfully.' });
+            setTimeout(() => setFlashMessage(null), 1500);
+          }
         } catch (e) {
-            console.error("Error deleting document: ", e);
+          console.error("Error deleting document: ", e);
         }
     };
 
@@ -413,6 +377,7 @@ function RepaymentsTracker({ isLoggedIn, setIsLoggedIn, dataEntryCount, setDataE
                         openEditModal={openEditModal}
                         setExpenses={setExpenses}
                         deleteExpense={deleteExpense}
+                        sortByDate={true}
                     />
                     {showEditModal && (
                         <EditModal

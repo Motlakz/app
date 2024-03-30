@@ -6,26 +6,26 @@ import FinancialAsset from '../assets/png-transparent-financial-management-finan
 
 function About() {
     return (
-        <div className="about-page animate__animated animate__backInDown bg-cover bg-no-repeat px-6 flex flex-col items-center gap-6 min-h-screen">
-            <section className="text-cyan-700 bg-indigo-300 bg-opacity-20 rounded-2xl p-10 my-20 flex flex-col items-center justify-between gap-10">
+        <div className="about-page animate__animated animate__backInDown bg-cover bg-no-repeat px-3 flex flex-col items-center gap-6 min-h-screen">
+            <section className="text-cyan-700 bg-indigo-300 bg-opacity-20 rounded-2xl p-10 mt-24 mb-8 flex flex-col items-center justify-between gap-10">
                 <article className="text-center pb-10 text-xl">
-                    <div className="images relative flex justify-between">
+                    <div className="images relative flex justify-between my-6">
                         <figure>
-                            <img src={FinanceImg} className="max-w-24 -rotate-45 w-full" alt="finance pic" />
+                            <img src={FinanceImg} className="max-w-24 -rotate-45 w-12 md:w-full" alt="finance pic" />
                         </figure>
                         <figure>
-                            <img src={Manage} className="max-w-24 w-full" alt="finance plan pic" />
+                            <img src={Manage} className="max-w-24 w-12 md:w-full" alt="finance plan pic" />
                         </figure>
                     </div>
                     <h2 className="text-3xl mb-10">About Repay Smart</h2>
                     <p className="mb-6">Repay Smart is an innovative financial management platform designed to empower users with the tools they need to manage their loan repayments effectively.</p>
                     <p> At its core, Repay Smart features a user-friendly form that captures essential loan information, such as loan type, current balance, monthly deduction, deduction date, and annual interest rate. This intuitive interface simplifies the process of entering and updating loan details, making it accessible for everyone, regardless of their financial literacy level. By consolidating all loan-related data in one place, Repay Smart acts as a centralized hub for users to oversee their financial obligations with ease.</p>
-                    <div className="images relative flex justify-between">
+                    <div className="images relative flex justify-between my-6">
                         <figure>
-                            <img src={FinancialAsset} className="max-w-24 w-full" alt="finance plan pic" />
+                            <img src={FinancialAsset} className="max-w-24 w-12 md:w-full" alt="finance plan pic" />
                         </figure>
                         <figure>
-                            <img src={FinancePlan} className="rotate-45 max-w-24 w-full" alt="finance pic" />
+                            <img src={FinancePlan} className="rotate-45 max-w-24 w-12 md:w-full" alt="finance pic" />
                         </figure>
                     </div>
                 </article>

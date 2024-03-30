@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import Profile from './Profile';
 
-const UserDropdown = ({ handleLogout }) => {
+const UserDropdown = ({ handleLogout, setDataEntryCount, setFlashMessage }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -64,7 +64,11 @@ const UserDropdown = ({ handleLogout }) => {
           </div>
         </div>
       )}
-      {showProfileModal && <Profile onClose={() => setShowProfileModal(false)} />}
+      {showProfileModal && <Profile
+          onClose={() => setShowProfileModal(false)}
+          setDataEntryCount={setDataEntryCount}
+          setFlashMessage={setFlashMessage}
+        />}
     </div>
   );
 };

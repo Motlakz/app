@@ -1,8 +1,11 @@
 import React, { useState } from "react";
-import { db, doc } from "../firebase-config";
+import { auth, db, doc } from "../firebase-config";
 import { writeBatch } from "firebase/firestore";
 
-const Table = ({ expenses, calculateRemainingAmount, openEditModal, setExpenses, setFlashMessage, deleteExpense }) => {
+const Table = ({ expenses, calculateRemainingAmount, openEditModal, setExpenses, setFlashMessage, deleteExpense, sortByDate }) => {
+    const sortedExpenses = [...expenses].sort((a, b) => {
+        return new Date(a.deductionDate) - new Date(b.deductionDate);
+    });
     const [files, setFiles] = useState(Array(expenses.length).fill(null));
     const [selectedRows, setSelectedRows] = useState([]);
 
@@ -20,21 +23,21 @@ const Table = ({ expenses, calculateRemainingAmount, openEditModal, setExpenses,
         if (selectedRows.length === expenses.length) {
             setSelectedRows([]);
         } else {
-            setSelectedRows(expenses.map((_, index) => index));
+            setSelectedRows(expenses.map((expense) => expense.id));
         }
     };
 
     const deleteSelectedExpenses = async () => {
         try {
             const batch = writeBatch(db);
-            selectedRows.forEach((index) => {
-                const expenseRef = doc(db, "expenses", expenses[index].id);
+            selectedRows.forEach((expenseId) => {
+                const expenseRef = doc(db, "users", auth.currentUser.uid, "expenses", expenseId);
                 batch.delete(expenseRef);
             });
             await batch.commit();
     
             setExpenses((prevExpenses) =>
-                prevExpenses.filter((_, i) => !selectedRows.includes(i))
+                prevExpenses.filter((expense) => !selectedRows.includes(expense.id))
             );
             setSelectedRows([]);
             setFlashMessage({ type: 'success', message: 'Selected expenses deleted successfully.' });
@@ -146,15 +149,15 @@ const Table = ({ expenses, calculateRemainingAmount, openEditModal, setExpenses,
                         </td>
                     </tr>
 
-                    {expenses.map((expense, index) => (
+                    {sortedExpenses.map((expense, index) => (
                         <tr key={expense.id} className="animate__animated animate__fadeInDown">
                             <td className="border border-purple-500 p-2">
-                                <input
-                                    type="checkbox"
-                                    className="form-checkbox"
-                                    checked={selectedRows.includes(index)}
-                                    onChange={() => handleRowSelect(index)}
-                                />
+                            <input
+                                type="checkbox"
+                                className="form-checkbox"
+                                checked={selectedRows.includes(expense.id)}
+                                onChange={() => handleRowSelect(expense.id)}
+                            />
                             </td>
                             <td className="border border-purple-500 p-2">{expense.title}</td>
                             <td className="border border-purple-500 p-2">{expense.initialAmount.toFixed(2)}</td>
@@ -171,15 +174,15 @@ const Table = ({ expenses, calculateRemainingAmount, openEditModal, setExpenses,
                             </td>
                             <td className="border-r border-b border-purple-500 p-4">
                                 <button
-                                    onClick={() => openEditModal(index)}
+                                    onClick={() => openEditModal(expense.id)}
                                     className="bg-blue-500 hover:bg-blue-600 hover:text-white text-indigo-100 px-2 py-1 mr-2 w-full"
-                                >
+                                    >
                                     Edit
-                                </button>
-                                <button
-                                    onClick={() => deleteExpense(index)}
+                                    </button>
+                                    <button
+                                    onClick={() => deleteExpense(expense.id)}
                                     className="bg-red-500 hover:bg-red-600 hover:text-purple-200 text-white px-2 py-1 w-full"
-                                >
+                                    >
                                     Remove
                                 </button>
                             </td>

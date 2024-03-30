@@ -1,5 +1,5 @@
 import { Route, Routes, BrowserRouter as Router } from 'react-router-dom';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import Footer from './components/Footer';
 import Navbar from './components/Navbar';
 import RepaymentsTracker from './components/Tracker';
@@ -21,49 +21,47 @@ function App() {
     const [showLoginPromptAfterSignOut, setShowLoginPromptAfterSignOut] = useState(false);
 
     useEffect(() => {
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
           if (user) {
-              // User is signed in
-              setIsLoggedIn(true);
-              if (!hasSignedUpBefore) {
-                  setHasSignedUpBefore(true);
-              }
+            // User is signed in
+            setIsLoggedIn(true);
+            if (!hasSignedUpBefore) {
+              setHasSignedUpBefore(true);
+            }
+      
+            // Fetch expenses from Firestore when the user is signed in
+            const userId = user.uid;
+            const expensesRef = collection(db, "users", userId, "expenses");
+            const querySnapshot = await getDocs(expensesRef);
+            const fetchedExpenses = querySnapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            }));
+            setDataEntryCount(fetchedExpenses.length);
+      
+            // Check if there are any expenses in local storage and migrate them to Firestore
+            const storedExpenses = localStorage.getItem('expenses');
+            if (storedExpenses) {
+              const localExpenses = JSON.parse(storedExpenses);
+              await Promise.all(localExpenses.map(async (expense) => {
+                try {
+                  await addDoc(expensesRef, expense);
+                } catch (e) {
+                  console.error("Error migrating expense: ", e);
+                }
+              }));
+              localStorage.removeItem('expenses');
+            }
           } else {
-              // User is signed out
-              setIsLoggedIn(false);
-          }
-      });
-  
-      // Cleanup subscription on unmount
-      return () => unsubscribe();
-    }, [hasSignedUpBefore]);;
-
-    const fetchExpenses = useCallback(async () => {
-      try {
-        if (isLoggedIn) {
-          const userId = auth.currentUser.uid;
-          const expensesRef = collection(db, "users", userId, "expenses");
-          const querySnapshot = await getDocs(expensesRef);
-          const fetchedExpenses = querySnapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
-          setDataEntryCount(fetchedExpenses.length);
-        } else {
-          setDataEntryCount(0);
-        }
-      } catch (error) {
-        console.error("Error fetching expenses: ", error);
-      }
-    }, [isLoggedIn]);
-
-    useEffect(() => {
-        if (isLoggedIn) {
-            fetchExpenses();
-        } else {
+            // User is signed out
+            setIsLoggedIn(false);
             setDataEntryCount(0);
-        }
-    }, [isLoggedIn, fetchExpenses]);
+          }
+        });
+      
+        // Cleanup subscription on unmount
+        return () => unsubscribe();
+    }, [hasSignedUpBefore]);
 
     useEffect(() => {
         if (isLoggedIn) {
@@ -79,35 +77,40 @@ function App() {
     }, [isLoggedIn]);
 
     const handleLogin = () => {
-      setShowSignUpPrompt(false);
-      setIsLoggedIn(true);
-  
-      // Get the user's UID after successful sign-in
-      const userId = auth.currentUser.uid;
-  
-      // Retrieve data from local storage
-      const storedExpenses = localStorage.getItem('expenses');
-      const expenses = storedExpenses ? JSON.parse(storedExpenses) : [];
-  
-      console.log('Expenses in local storage:', expenses);
-  
-      if (expenses.length > 0) {
-          // Move data from local storage to Firestore
-          const expensesRef = collection(db, "users", userId, "expenses");
-          expenses.forEach(async (expense) => {
+        setShowSignUpPrompt(false);
+        setIsLoggedIn(true);
+      
+        // Get the user's UID after successful sign-in
+        const user = auth.currentUser;
+        if (user) {
+          const userId = user.uid;
+      
+          // Retrieve data from local storage
+          const storedExpenses = localStorage.getItem('expenses');
+          const expenses = storedExpenses ? JSON.parse(storedExpenses) : [];
+      
+          console.log('Expenses in local storage:', expenses);
+      
+          if (expenses.length > 0) {
+            // Move data from local storage to Firestore
+            const expensesRef = collection(db, "users", userId, "expenses");
+            expenses.forEach(async (expense) => {
               try {
-                  await addDoc(expensesRef, expense);
+                await addDoc(expensesRef, expense);
               } catch (error) {
-                  console.error("Error adding document: ", error);
+                console.error("Error adding document: ", error);
               }
-          });
-  
-          // Clear local storage after moving data to Firestore
-          localStorage.removeItem('expenses');
-      } else {
-          console.log('No expenses in local storage to move to Firestore.');
-      }
-  };
+            });
+      
+            // Clear local storage after moving data to Firestore
+            localStorage.removeItem('expenses');
+          } else {
+            console.log('No expenses in local storage to move to Firestore.');
+          }
+        } else {
+          console.error("User not authenticated");
+        }
+      };
 
   const handleSignOut = () => {
     signOut(auth)
